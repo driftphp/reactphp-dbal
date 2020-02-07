@@ -155,7 +155,8 @@ abstract class ConnectionTest extends TestCase
             ->then(function () use ($connection) {
                 $queryBuilder = $connection->createQueryBuilder();
 
-                return $connection->query($queryBuilder
+                return $connection
+                    ->query($queryBuilder
                     ->select('*')
                     ->from('test', 't')
                     ->where($queryBuilder->expr()->orX(
