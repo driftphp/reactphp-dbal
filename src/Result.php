@@ -1,10 +1,22 @@
 <?php
 
+/*
+ * This file is part of the DriftPHP Project
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * Feel free to edit as you please, and have fun.
+ *
+ * @author Marc Morera <yuhu@mmoreram.com>
+ */
+
+declare(strict_types=1);
 
 namespace Drift\DBAL;
 
 /**
- * Class Result
+ * Class Result.
  */
 class Result
 {
@@ -24,7 +36,7 @@ class Result
     }
 
     /**
-     * Fetch count
+     * Fetch count.
      */
     public function fetchCount()
     {
@@ -32,7 +44,7 @@ class Result
     }
 
     /**
-     * Fetch all rows
+     * Fetch all rows.
      */
     public function fetchAllRows()
     {
@@ -40,7 +52,7 @@ class Result
     }
 
     /**
-     * Fetch first row
+     * Fetch first row.
      *
      * @return mixed|null
      */

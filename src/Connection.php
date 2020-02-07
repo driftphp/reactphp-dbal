@@ -1,5 +1,18 @@
 <?php
 
+/*
+ * This file is part of the DriftPHP Project
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * Feel free to edit as you please, and have fun.
+ *
+ * @author Marc Morera <yuhu@mmoreram.com>
+ */
+
+declare(strict_types=1);
+
 namespace Drift\DBAL;
 
 use Doctrine\DBAL\DBALException;
@@ -12,7 +25,7 @@ use Drift\DBAL\Mock\MockedDriver;
 use React\Promise\PromiseInterface;
 
 /**
- * Class Connection
+ * Class Connection.
  */
 class Connection
 {
@@ -33,26 +46,26 @@ class Connection
 
     /**
      * Connection constructor.
-     * @param Driver $driver
-     * @param Credentials $credentials
+     *
+     * @param Driver           $driver
+     * @param Credentials      $credentials
      * @param AbstractPlatform $platform
      */
     private function __construct(
         Driver $driver,
         Credentials $credentials,
         AbstractPlatform $platform
-    )
-    {
+    ) {
         $this->driver = $driver;
         $this->credentials = $credentials;
         $this->platform = $platform;
     }
 
     /**
-     * Create new connection
+     * Create new connection.
      *
-     * @param Driver $driver
-     * @param Credentials $credentials
+     * @param Driver           $driver
+     * @param Credentials      $credentials
      * @param AbstractPlatform $platform
      *
      * @return Connection
@@ -61,16 +74,15 @@ class Connection
         Driver $driver,
         Credentials $credentials,
         AbstractPlatform $platform
-    )
-    {
+    ) {
         return new self($driver, $credentials, $platform);
     }
 
     /**
-     * Create new connection
+     * Create new connection.
      *
-     * @param Driver $driver
-     * @param Credentials $credentials
+     * @param Driver           $driver
+     * @param Credentials      $credentials
      * @param AbstractPlatform $platform
      *
      * @return Connection
@@ -79,8 +91,7 @@ class Connection
         Driver $driver,
         Credentials $credentials,
         AbstractPlatform $platform
-    )
-    {
+    ) {
         $connection = new self($driver, $credentials, $platform);
         $connection->connect();
 
@@ -88,7 +99,7 @@ class Connection
     }
 
     /**
-     * Connect
+     * Connect.
      */
     public function connect()
     {
@@ -98,29 +109,29 @@ class Connection
     }
 
     /**
-     * Creates QueryBuilder
+     * Creates QueryBuilder.
      *
      * @return QueryBuilder
      *
      * @throws DBALException
      */
-    public function createQueryBuilder() : QueryBuilder
+    public function createQueryBuilder(): QueryBuilder
     {
         return new QueryBuilder(
             new MockedDBALConnection([
-                'platform' => $this->platform
+                'platform' => $this->platform,
             ], new MockedDriver())
         );
     }
 
     /**
-     * Query by query builder
+     * Query by query builder.
      *
      * @param QueryBuilder $queryBuilder
      *
      * @return PromiseInterface
      */
-    public function query(QueryBuilder $queryBuilder) : PromiseInterface
+    public function query(QueryBuilder $queryBuilder): PromiseInterface
     {
         return $this->queryBySQL(
             $queryBuilder->getSQL(),
@@ -129,14 +140,14 @@ class Connection
     }
 
     /**
-     * Query by sql and parameters
+     * Query by sql and parameters.
      *
      * @param string $sql
-     * @param array $parameters
+     * @param array  $parameters
      *
      * @return PromiseInterface
      */
-    public function queryBySQL(string $queryBuilder, array $parameters = []) : PromiseInterface
+    public function queryBySQL(string $queryBuilder, array $parameters = []): PromiseInterface
     {
         return $this
             ->driver
@@ -144,7 +155,7 @@ class Connection
     }
 
     /**
-     * Insert
+     * Insert.
      *
      * @return PromiseInterface
      */
@@ -152,8 +163,7 @@ class Connection
         string $table,
         array $values,
         array $parameters
-    ) : PromiseInterface
-    {
+    ): PromiseInterface {
         $queryBuilder = $this
             ->createQueryBuilder()
             ->insert($table)
@@ -164,7 +174,7 @@ class Connection
     }
 
     /**
-     * Update
+     * Update.
      *
      * @return PromiseInterface
      *
@@ -174,8 +184,7 @@ class Connection
         string $table,
         array $id,
         array $parameters
-    ) : PromiseInterface
-    {
+    ): PromiseInterface {
         if (empty($id)) {
             throw InvalidArgumentException::fromEmptyCriteria();
         }

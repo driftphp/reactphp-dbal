@@ -1,19 +1,30 @@
 <?php
 
+/*
+ * This file is part of the DriftPHP Project
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * Feel free to edit as you please, and have fun.
+ *
+ * @author Marc Morera <yuhu@mmoreram.com>
+ */
+
+declare(strict_types=1);
 
 namespace Drift\DBAL\Driver;
 
 use Clue\React\SQLite\DatabaseInterface;
 use Clue\React\SQLite\Factory;
-use Doctrine\DBAL\Query\QueryBuilder;
+use Clue\React\SQLite\Result as SQLiteResult;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Result;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
-use Clue\React\SQLite\Result as SQLiteResult;
 
 /**
- * Class SQLiteDriver
+ * Class SQLiteDriver.
  */
 class SQLiteDriver implements Driver
 {
@@ -38,7 +49,7 @@ class SQLiteDriver implements Driver
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function connect(Credentials $credentials, array $options = [])
     {
@@ -48,17 +59,16 @@ class SQLiteDriver implements Driver
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function query(
         string $sql,
         array $parameters
-    ): PromiseInterface
-    {
+    ): PromiseInterface {
         return $this
             ->database
             ->query($sql, $parameters)
-            ->then(function(SQLiteResult $sqliteResult) {
+            ->then(function (SQLiteResult $sqliteResult) {
                 return new Result($sqliteResult->rows);
             });
     }

@@ -1,10 +1,22 @@
 <?php
 
+/*
+ * This file is part of the DriftPHP Project
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * Feel free to edit as you please, and have fun.
+ *
+ * @author Marc Morera <yuhu@mmoreram.com>
+ */
+
+declare(strict_types=1);
 
 namespace Drift\DBAL;
 
 /**
- * Class Credentials
+ * Class Credentials.
  */
 class Credentials
 {
@@ -55,8 +67,7 @@ class Credentials
         string $password,
         string $dbName,
         array $options = []
-    )
-    {
+    ) {
         $this->host = $host;
         $this->port = $port;
         $this->user = $user;
@@ -114,12 +125,12 @@ class Credentials
     }
 
     /**
-     * To string
+     * To string.
      */
-    public function toString() : string
+    public function toString(): string
     {
         $asString = sprintf(
-            "%s:%s@%s:%d/%s",
+            '%s:%s@%s:%d/%s',
             $this->user,
             $this->password,
             $this->host,

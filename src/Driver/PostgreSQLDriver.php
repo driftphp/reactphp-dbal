@@ -1,5 +1,17 @@
 <?php
 
+/*
+ * This file is part of the DriftPHP Project
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * Feel free to edit as you please, and have fun.
+ *
+ * @author Marc Morera <yuhu@mmoreram.com>
+ */
+
+declare(strict_types=1);
 
 namespace Drift\DBAL\Driver;
 
@@ -11,7 +23,7 @@ use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 
 /**
- * Class PostgreSQLDriver
+ * Class PostgreSQLDriver.
  */
 class PostgreSQLDriver implements Driver
 {
@@ -36,7 +48,7 @@ class PostgreSQLDriver implements Driver
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function connect(Credentials $credentials, array $options = [])
     {
@@ -45,24 +57,23 @@ class PostgreSQLDriver implements Driver
             'port' => $credentials->getPort(),
             'user' => $credentials->getUser(),
             'password' => $credentials->getPassword(),
-            'database' => $credentials->getDbName()
+            'database' => $credentials->getDbName(),
         ], $this->loop);
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function query(
         string $sql,
         array $parameters
-    ): PromiseInterface
-    {
+    ): PromiseInterface {
         /**
-         * We should fix the parametrization
+         * We should fix the parametrization.
          */
         $i = 1;
-        $sql = preg_replace_callback('~\?~', function($_) use (&$i){
-            return '$' . $i++;
+        $sql = preg_replace_callback('~\?~', function ($_) use (&$i) {
+            return '$'.$i++;
         }, $sql);
 
         $results = [];
@@ -71,15 +82,15 @@ class PostgreSQLDriver implements Driver
         $this
             ->client
             ->executeStatement($sql, $parameters)
-            ->subscribe(function($row) use (&$results) {
+            ->subscribe(function ($row) use (&$results) {
                 $results[] = $row;
-            }, null, function() use (&$results, $deferred) {
+            }, null, function () use (&$results, $deferred) {
                 $deferred->resolve($results);
             });
 
         return $deferred
             ->promise()
-            ->then(function($results) {
+            ->then(function ($results) {
                 return new Result($results);
             });
     }

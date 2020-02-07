@@ -1,18 +1,27 @@
 <?php
 
+/*
+ * This file is part of the DriftPHP Project
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * Feel free to edit as you please, and have fun.
+ *
+ * @author Marc Morera <yuhu@mmoreram.com>
+ */
+
+declare(strict_types=1);
 
 namespace Drift\DBAL\Mock;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
-use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Schema\AbstractSchemaManager;
-
 
 class MockedDriver implements Driver
 {
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function connect(array $params, $username = null, $password = null, array $driverOptions = [])
     {
@@ -20,7 +29,7 @@ class MockedDriver implements Driver
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function getDatabasePlatform()
     {
@@ -28,7 +37,7 @@ class MockedDriver implements Driver
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function getSchemaManager(Connection $conn)
     {
@@ -36,7 +45,7 @@ class MockedDriver implements Driver
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function getName()
     {
@@ -44,7 +53,7 @@ class MockedDriver implements Driver
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function getDatabase(Connection $conn)
     {

@@ -1,5 +1,18 @@
 <?php
 
+/*
+ * This file is part of the DriftPHP Project
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * Feel free to edit as you please, and have fun.
+ *
+ * @author Marc Morera <yuhu@mmoreram.com>
+ */
+
+declare(strict_types=1);
+
 namespace Drift\DBAL\Mock;
 
 use Doctrine\DBAL\Cache\QueryCacheProfile;
@@ -10,12 +23,12 @@ use Doctrine\DBAL\ParameterType;
 use Exception;
 
 /**
- * Class MockedDBALConnection
+ * Class MockedDBALConnection.
  */
 class MockedDBALConnection extends Connection
 {
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function prepare($prepareString)
     {
@@ -23,7 +36,7 @@ class MockedDBALConnection extends Connection
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function query()
     {
@@ -31,7 +44,7 @@ class MockedDBALConnection extends Connection
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function quote($input, $type = ParameterType::STRING)
     {
@@ -39,7 +52,7 @@ class MockedDBALConnection extends Connection
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function exec($statement)
     {
@@ -47,7 +60,7 @@ class MockedDBALConnection extends Connection
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function lastInsertId($name = null)
     {
@@ -55,7 +68,7 @@ class MockedDBALConnection extends Connection
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function beginTransaction()
     {
@@ -63,7 +76,7 @@ class MockedDBALConnection extends Connection
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function commit()
     {
@@ -71,7 +84,7 @@ class MockedDBALConnection extends Connection
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function rollBack()
     {
@@ -79,7 +92,7 @@ class MockedDBALConnection extends Connection
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function errorCode()
     {
@@ -87,7 +100,7 @@ class MockedDBALConnection extends Connection
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function errorInfo()
     {
@@ -100,12 +113,12 @@ class MockedDBALConnection extends Connection
      * If the query is parametrized, a prepared statement is used.
      * If an SQLLogger is configured, the execution is logged.
      *
-     * @param string                 $query  The SQL query to execute.
-     * @param mixed[]                $params The parameters to bind to the query, if any.
-     * @param int[]|string[]         $types  The types the previous parameters are in.
-     * @param QueryCacheProfile|null $qcp    The query cache profile, optional.
+     * @param string                 $query  the SQL query to execute
+     * @param mixed[]                $params the parameters to bind to the query, if any
+     * @param int[]|string[]         $types  the types the previous parameters are in
+     * @param QueryCacheProfile|null $qcp    the query cache profile, optional
      *
-     * @return Driver\ResultStatement The executed statement.
+     * @return Driver\ResultStatement the executed statement
      *
      * @throws DBALException
      */
@@ -120,11 +133,11 @@ class MockedDBALConnection extends Connection
      *
      * This method supports PDO binding types as well as DBAL mapping types.
      *
-     * @param string         $query  The SQL query.
-     * @param mixed[]        $params The query parameters.
-     * @param int[]|string[] $types  The parameter types.
+     * @param string         $query  the SQL query
+     * @param mixed[]        $params the query parameters
+     * @param int[]|string[] $types  the parameter types
      *
-     * @return int The number of affected rows.
+     * @return int the number of affected rows
      *
      * @throws DBALException
      */

@@ -1,9 +1,20 @@
 <?php
 
+/*
+ * This file is part of the DriftPHP Project
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * Feel free to edit as you please, and have fun.
+ *
+ * @author Marc Morera <yuhu@mmoreram.com>
+ */
+
+declare(strict_types=1);
 
 namespace Drift\DBAL\Driver;
 
-use Doctrine\DBAL\Query\QueryBuilder;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Result;
 use React\EventLoop\LoopInterface;
@@ -14,7 +25,7 @@ use React\Promise\PromiseInterface;
 use React\Socket\ConnectorInterface;
 
 /**
- * Class MysqlDriver
+ * Class MysqlDriver.
  */
 class MysqlDriver implements Driver
 {
@@ -31,7 +42,7 @@ class MysqlDriver implements Driver
     /**
      * MysqlDriver constructor.
      *
-     * @param LoopInterface $loop
+     * @param LoopInterface      $loop
      * @param ConnectorInterface $connector
      */
     public function __construct(LoopInterface $loop, ConnectorInterface $connector = null)
@@ -42,7 +53,7 @@ class MysqlDriver implements Driver
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function connect(Credentials $credentials, array $options = [])
     {
@@ -52,17 +63,16 @@ class MysqlDriver implements Driver
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function query(
         string $sql,
         array $parameters
-    ): PromiseInterface
-    {
+    ): PromiseInterface {
         return $this
             ->connection
             ->query($sql, $parameters)
-            ->then(function(QueryResult $queryResult) {
+            ->then(function (QueryResult $queryResult) {
                 return new Result($queryResult->resultRows);
             });
     }

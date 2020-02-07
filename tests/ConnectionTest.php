@@ -1,19 +1,30 @@
 <?php
 
+/*
+ * This file is part of the DriftPHP Project
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * Feel free to edit as you please, and have fun.
+ *
+ * @author Marc Morera <yuhu@mmoreram.com>
+ */
+
+declare(strict_types=1);
+
 namespace Drift\DBAL\Tests;
 
 use Drift\DBAL\Connection;
 use Drift\DBAL\Result;
+use function Clue\React\Block\await;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
-use React\Promise\Promise;
 use React\Promise\PromiseInterface;
-use function Clue\React\Block\await;
-use function React\Promise\all;
 
 /**
- * Class ConnectionTest
+ * Class ConnectionTest.
  */
 abstract class ConnectionTest extends TestCase
 {
@@ -22,28 +33,28 @@ abstract class ConnectionTest extends TestCase
      *
      * @return Connection
      */
-    abstract protected function getConnection(LoopInterface $loop) : Connection;
+    abstract protected function getConnection(LoopInterface $loop): Connection;
 
     /**
-     * Create database and table
+     * Create database and table.
      *
      * @param Connection $connection
      *
      * @return PromiseInterface
      */
-    abstract protected function createInfrastructure(Connection $connection) : PromiseInterface;
+    abstract protected function createInfrastructure(Connection $connection): PromiseInterface;
 
     /**
-     * Drop infrastructure
+     * Drop infrastructure.
      *
      * @param Connection $connection
      *
      * @return PromiseInterface
      */
-    abstract protected function dropInfrastructure(Connection $connection) : PromiseInterface;
+    abstract protected function dropInfrastructure(Connection $connection): PromiseInterface;
 
     /**
-     * Create loop Loop
+     * Create loop Loop.
      */
     protected function createLoop()
     {
@@ -51,7 +62,7 @@ abstract class ConnectionTest extends TestCase
     }
 
     /**
-     * Test that query builder works properly
+     * Test that query builder works properly.
      */
     public function testQueryBuilder()
     {
@@ -70,7 +81,7 @@ abstract class ConnectionTest extends TestCase
     }
 
     /**
-     * Test query
+     * Test query.
      */
     public function testQuery()
     {
@@ -78,15 +89,14 @@ abstract class ConnectionTest extends TestCase
         $connection = $this->getConnection($loop);
         $promise = $this
             ->createInfrastructure($connection)
-            ->then(function(Connection $connection) {
-
+            ->then(function (Connection $connection) {
                 return $connection
                     ->insert('test', [
                         'id' => '1',
                         'field1' => '?',
-                        'field2' => '?'
+                        'field2' => '?',
                     ], ['val1', 'val2'])
-                    ->then(function() use ($connection) {
+                    ->then(function () use ($connection) {
                         return $connection
                             ->query($connection
                                 ->createQueryBuilder()
@@ -97,11 +107,11 @@ abstract class ConnectionTest extends TestCase
                                 ->setMaxResults(1)
                             );
                     })
-                    ->then(function(Result $result) {
+                    ->then(function (Result $result) {
                         $this->assertEquals($result->fetchFirstRow(), [
                             'id' => '1',
                             'field1' => 'val1',
-                            'field2' => 'val2'
+                            'field2' => 'val2',
                         ]);
                     });
             });
@@ -110,7 +120,7 @@ abstract class ConnectionTest extends TestCase
     }
 
     /**
-     * Test multiple rows
+     * Test multiple rows.
      *
      * @group lol
      */
@@ -120,33 +130,29 @@ abstract class ConnectionTest extends TestCase
         $connection = $this->getConnection($loop);
         $promise = $this
             ->createInfrastructure($connection)
-            ->then(function(Connection $connection) {
-
+            ->then(function (Connection $connection) {
                 return $connection
                     ->insert('test', [
                             'id' => '?',
                             'field1' => '?',
-                            'field2' => '?'
+                            'field2' => '?',
                         ], ['1', 'val11', 'val12'])
-                    ->then(function() use ($connection) {
-
+                    ->then(function () use ($connection) {
                         return $connection->insert('test', [
                             'id' => '?',
                             'field1' => '?',
-                            'field2' => '?'
+                            'field2' => '?',
                         ], ['2', 'val21', 'val22']);
                     })
-                    ->then(function() use ($connection) {
-
+                    ->then(function () use ($connection) {
                         return $connection->insert('test', [
                             'id' => '?',
                             'field1' => '?',
-                            'field2' => '?'
+                            'field2' => '?',
                         ], ['3', 'val31', 'val32']);
                     });
             })
-            ->then(function() use ($connection) {
-
+            ->then(function () use ($connection) {
                 $queryBuilder = $connection->createQueryBuilder();
 
                 return $connection->query($queryBuilder
@@ -158,7 +164,7 @@ abstract class ConnectionTest extends TestCase
                     ))
                     ->setParameters(['1', '2']));
             })
-            ->then(function(Result $result) {
+            ->then(function (Result $result) {
                 $this->assertCount(2, $result->fetchAllRows());
                 $this->assertEquals(2, $result->fetchCount());
             });
