@@ -1,0 +1,32 @@
+{
+    "name": "drift/redis-bundle",
+    "description": "DBAL for ReactPHP",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Marc Morera",
+            "email": "yuhu@mmoreram.com"
+        }
+    ],
+    "require": {
+        "php": "^7.3",
+        "doctrine/dbal": "*",
+        "react/event-loop": "*",
+        "clue/block-react": "*",
+
+        "react/mysql": "*",
+        "clue/reactphp-sqlite": "*",
+        "voryx/pgasync": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Drift\\DBAL\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Drift\\DBAL\\Tests\\": "tests/"
+        }
+    }
+}
