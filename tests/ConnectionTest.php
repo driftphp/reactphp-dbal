@@ -29,6 +29,13 @@ use React\Promise\PromiseInterface;
 abstract class ConnectionTest extends TestCase
 {
     /**
+     * The timeout is used to prevent tests from endless waiting.
+     * Consider this amount of seconds as a reasonable timeout
+     * to understand that something went wrong.
+     */
+    private const MAX_TIMEOUT = 3;
+
+    /**
      * @param LoopInterface $loop
      *
      * @return Connection
@@ -116,7 +123,7 @@ abstract class ConnectionTest extends TestCase
                     });
             });
 
-        await($promise, $loop);
+        await($promise, $loop, self::MAX_TIMEOUT);
     }
 
     /**
@@ -170,6 +177,6 @@ abstract class ConnectionTest extends TestCase
                 $this->assertEquals(2, $result->fetchCount());
             });
 
-        await($promise, $loop);
+        await($promise, $loop, self::MAX_TIMEOUT);
     }
 }
