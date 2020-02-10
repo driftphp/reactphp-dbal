@@ -19,6 +19,7 @@ use Doctrine\DBAL\Platforms\SqlitePlatform;
 use Drift\DBAL\Connection;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\SQLiteDriver;
+use Drift\DBAL\Exception\TableNotFoundException;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
 
@@ -74,6 +75,8 @@ class SQLiteConnectionTest extends ConnectionTest
             ->queryBySQL('DROP TABLE test')
             ->then(function () use ($connection) {
                 return $connection;
+            }, function(TableNotFoundException $exception) {
+                // Silent pass
             });
     }
 }
