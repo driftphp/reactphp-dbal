@@ -19,6 +19,7 @@ use Doctrine\DBAL\Platforms\MySqlPlatform;
 use Drift\DBAL\Connection;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\MysqlDriver;
+use Drift\DBAL\Exception\TableNotFoundException;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
 
@@ -77,6 +78,10 @@ class MysqlConnectionTest extends ConnectionTest
         return $connection
             ->queryBySQL('DROP TABLE test')
             ->then(function () use ($connection) {
+                return $connection;
+            }, function (TableNotFoundException $exception) use ($connection) {
+                // Silent pass
+
                 return $connection;
             });
     }

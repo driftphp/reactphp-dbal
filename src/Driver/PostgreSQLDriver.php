@@ -16,8 +16,11 @@ declare(strict_types=1);
 namespace Drift\DBAL\Driver;
 
 use Drift\DBAL\Credentials;
+use Drift\DBAL\Exception\DBALException;
+use Drift\DBAL\Exception\TableNotFoundException;
 use Drift\DBAL\Result;
 use PgAsync\Client;
+use PgAsync\ErrorException;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
@@ -84,7 +87,9 @@ class PostgreSQLDriver implements Driver
             ->executeStatement($sql, $parameters)
             ->subscribe(function ($row) use (&$results) {
                 $results[] = $row;
-            }, null, function () use (&$results, $deferred) {
+            }, function (ErrorException $exception) {
+                $this->parseException($exception);
+            }, function () use (&$results, $deferred) {
                 $deferred->resolve($results);
             });
 
@@ -93,5 +98,29 @@ class PostgreSQLDriver implements Driver
             ->then(function ($results) {
                 return new Result($results);
             });
+    }
+
+    /**
+     * Parse exception.
+     *
+     * @param ErrorException $exception
+     *
+     * @throws DBALException
+     */
+    private function parseException(ErrorException $exception)
+    {
+        $message = $exception->getMessage();
+        $match = null;
+
+        if (
+            preg_match('~^ERROR: table "(.*?)" does not exist.*$~', $message, $match) ||
+            preg_match('~^ERROR: relation "(.*?)" does not exist.*$~', $message, $match)
+        ) {
+            $tableName = $match[1];
+
+            throw TableNotFoundException::createByTableName($tableName);
+        }
+
+        throw DBALException::createGeneric($message);
     }
 }
