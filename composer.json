@@ -13,11 +13,13 @@
         "php": "^7.3",
         "doctrine/dbal": "*",
         "react/event-loop": "*",
-        "clue/block-react": "*",
 
         "react/mysql": "*",
         "clue/reactphp-sqlite": "*",
         "voryx/pgasync": "*"
+    },
+    "require-dev": {
+      "clue/block-react": "*"
     },
     "autoload": {
         "psr-4": {
