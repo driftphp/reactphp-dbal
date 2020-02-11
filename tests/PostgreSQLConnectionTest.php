@@ -15,12 +15,11 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Tests;
 
+use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Platforms\PostgreSqlPlatform;
 use Drift\DBAL\Connection;
 use Drift\DBAL\Credentials;
-use Drift\DBAL\Driver\PostgreSQLDriver;
-use Drift\DBAL\Exception\TableNotFoundException;
-use PgAsync\ErrorException;
+use Drift\DBAL\Driver\PostgreSQL\PostgreSQLDriver;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
 
@@ -78,8 +77,10 @@ class PostgreSQLConnectionTest extends ConnectionTest
             ->queryBySQL('DROP TABLE test')
             ->then(function () use ($connection) {
                 return $connection;
-            }, function(TableNotFoundException $exception) {
+            }, function (TableNotFoundException $exception) use ($connection) {
                 // Silent pass
+
+                return $connection;
             });
     }
 }

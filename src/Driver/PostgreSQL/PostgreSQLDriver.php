@@ -13,11 +13,11 @@
 
 declare(strict_types=1);
 
-namespace Drift\DBAL\Driver;
+namespace Drift\DBAL\Driver\PostgreSQL;
 
 use Drift\DBAL\Credentials;
-use Drift\DBAL\Exception\DBALException;
-use Drift\DBAL\Exception\TableNotFoundException;
+use Drift\DBAL\Driver\Driver;
+use Drift\DBAL\Driver\PlainDriverException;
 use Drift\DBAL\Result;
 use PgAsync\Client;
 use PgAsync\ErrorException;
@@ -41,12 +41,18 @@ class PostgreSQLDriver implements Driver
     private $loop;
 
     /**
+     * @var EmptyDoctrinePostgreSQLDriver
+     */
+    private $doctrineDriver;
+
+    /**
      * MysqlDriver constructor.
      *
      * @param LoopInterface $loop
      */
     public function __construct(LoopInterface $loop)
     {
+        $this->doctrineDriver = new EmptyDoctrinePostgreSQLDriver();
         $this->loop = $loop;
     }
 
@@ -87,11 +93,18 @@ class PostgreSQLDriver implements Driver
             ->executeStatement($sql, $parameters)
             ->subscribe(function ($row) use (&$results) {
                 $results[] = $row;
-            }, function(ErrorException $exception) {
+            }, function (ErrorException $exception) {
+                $errorResponse = $exception->getErrorResponse();
+                $message = $exception->getMessage();
+                $code = 0;
+                foreach ($errorResponse->getErrorMessages() as $messageLine) {
+                    if ('C' === $messageLine['type']) {
+                        $code = $messageLine['message'];
+                    }
+                }
 
-                $this->parseException($exception);
+                throw $this->doctrineDriver->convertException($message, PlainDriverException::createFromMessageEndErrorCode($message, (string) $code));
             }, function () use (&$results, $deferred) {
-
                 $deferred->resolve($results);
             });
 
@@ -100,29 +113,5 @@ class PostgreSQLDriver implements Driver
             ->then(function ($results) {
                 return new Result($results);
             });
-    }
-
-    /**
-     * Parse exception
-     *
-     * @param ErrorException $exception
-     *
-     * @throws DBALException
-     */
-    private function parseException(ErrorException $exception)
-    {
-        $message = $exception->getMessage();
-        $match = null;
-
-        if (
-            preg_match('~^ERROR: table "(.*?)" does not exist.*$~', $message, $match) ||
-            preg_match('~^ERROR: relation "(.*?)" does not exist.*$~', $message, $match)
-        ) {
-            $tableName = $match[1];
-
-            throw TableNotFoundException::createByTableName($tableName);
-        }
-
-        throw DBALException::createGeneric($message);
     }
 }

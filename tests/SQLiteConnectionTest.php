@@ -15,11 +15,11 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Tests;
 
+use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Platforms\SqlitePlatform;
 use Drift\DBAL\Connection;
 use Drift\DBAL\Credentials;
-use Drift\DBAL\Driver\SQLiteDriver;
-use Drift\DBAL\Exception\TableNotFoundException;
+use Drift\DBAL\Driver\SQLite\SQLiteDriver;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
 
@@ -75,8 +75,10 @@ class SQLiteConnectionTest extends ConnectionTest
             ->queryBySQL('DROP TABLE test')
             ->then(function () use ($connection) {
                 return $connection;
-            }, function(TableNotFoundException $exception) {
+            }, function (TableNotFoundException $exception) use ($connection) {
                 // Silent pass
+
+                return $connection;
             });
     }
 }

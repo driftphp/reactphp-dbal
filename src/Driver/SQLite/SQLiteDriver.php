@@ -13,14 +13,14 @@
 
 declare(strict_types=1);
 
-namespace Drift\DBAL\Driver;
+namespace Drift\DBAL\Driver\SQLite;
 
 use Clue\React\SQLite\DatabaseInterface;
 use Clue\React\SQLite\Factory;
 use Clue\React\SQLite\Result as SQLiteResult;
 use Drift\DBAL\Credentials;
-use Drift\DBAL\Exception\DBALException;
-use Drift\DBAL\Exception\TableNotFoundException;
+use Drift\DBAL\Driver\Driver;
+use Drift\DBAL\Driver\PlainDriverException;
 use Drift\DBAL\Result;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
@@ -42,12 +42,18 @@ class SQLiteDriver implements Driver
     private $database;
 
     /**
+     * @var EmptyDoctrineSQLiteDriver
+     */
+    private $doctrineDriver;
+
+    /**
      * SQLiteDriver constructor.
      *
      * @param LoopInterface $loop
      */
     public function __construct(LoopInterface $loop)
     {
+        $this->doctrineDriver = new EmptyDoctrineSQLiteDriver();
         $this->factory = new Factory($loop);
     }
 
@@ -74,30 +80,10 @@ class SQLiteDriver implements Driver
             ->then(function (SQLiteResult $sqliteResult) {
                 return new Result($sqliteResult->rows);
             })
-            ->otherwise(function(RuntimeException $exception) {
+            ->otherwise(function (RuntimeException $exception) {
+                $message = $exception->getMessage();
 
-                $this->parseException($exception);
+                throw $this->doctrineDriver->convertException($message, PlainDriverException::createFromMessageEndErrorCode($message, (string) $exception->getCode()));
             });
-    }
-
-    /**
-     * Parse exception
-     *
-     * @param RuntimeException $exception
-     *
-     * @throws DBALException
-     */
-    private function parseException(RuntimeException $exception)
-    {
-        $message = $exception->getMessage();
-        $match = null;
-
-        if (preg_match('~^no such table:\s*(.*?)$~', $message, $match)) {
-            $tableName = $match[1];
-
-            throw TableNotFoundException::createByTableName($tableName);
-        }
-
-        throw DBALException::createGeneric($message);
     }
 }

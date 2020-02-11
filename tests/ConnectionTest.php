@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Tests;
 
+use Doctrine\DBAL\Exception\TableNotFoundException;
 use Drift\DBAL\Connection;
-use Drift\DBAL\Exception\TableNotFoundException;
 use Drift\DBAL\Result;
 use function Clue\React\Block\await;
 use PHPUnit\Framework\TestCase;
@@ -180,7 +180,7 @@ abstract class ConnectionTest extends TestCase
     }
 
     /**
-     * Test connection exception
+     * Test connection exception.
      *
      * @group lol
      */
@@ -189,7 +189,7 @@ abstract class ConnectionTest extends TestCase
         $loop = $this->createLoop();
         $connection = $this->getConnection($loop);
         $promise = $this->dropInfrastructure($connection)
-            ->then(function(Connection $connection) {
+            ->then(function (Connection $connection) {
                 return $connection->insert('test', [
                     'id' => '?',
                     'field1' => '?',
@@ -198,7 +198,6 @@ abstract class ConnectionTest extends TestCase
             });
 
         $this->expectException(TableNotFoundException::class);
-        $this->expectExceptionMessage('Table test not found');
         await($promise, $loop);
     }
 }
