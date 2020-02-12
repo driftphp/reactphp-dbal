@@ -40,7 +40,7 @@ final class PlainDriverException extends Exception implements DriverException
         string $message,
         string $sqlState
     ) {
-        $exception = new PlainDriverException($message);
+        $exception = new self($message);
         $exception->sqlState = $sqlState;
 
         return $exception;
