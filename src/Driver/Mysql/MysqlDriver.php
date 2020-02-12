@@ -87,7 +87,7 @@ class MysqlDriver implements Driver
             ->otherwise(function (Exception $exception) {
                 $message = $exception->getMessage();
 
-                throw $this->doctrineDriver->convertException($message, PlainDriverException::createFromMessageEndErrorCode($message, (string) $exception->getCode()));
+                throw $this->doctrineDriver->convertException($message, PlainDriverException::createFromMessageAndErrorCode($message, (string) $exception->getCode()));
             });
     }
 }

@@ -36,11 +36,12 @@ final class PlainDriverException extends Exception implements DriverException
      *
      * @return PlainDriverException
      */
-    public static function createFromMessageEndErrorCode(
+    public static function createFromMessageAndErrorCode(
         string $message,
         string $sqlState
-    ) {
-        $exception = new PlainDriverException($message);
+    ): self
+    {
+        $exception = new self($message);
         $exception->sqlState = $sqlState;
 
         return $exception;
