@@ -103,7 +103,7 @@ class PostgreSQLDriver implements Driver
                     }
                 }
 
-                throw $this->doctrineDriver->convertException($message, PlainDriverException::createFromMessageEndErrorCode($message, (string) $code));
+                throw $this->doctrineDriver->convertException($message, PlainDriverException::createFromMessageAndErrorCode($message, (string) $code));
             }, function () use (&$results, $deferred) {
                 $deferred->resolve($results);
             });
