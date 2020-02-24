@@ -54,7 +54,7 @@ class PostgreSQLConnectionTest extends ConnectionTest
     protected function createInfrastructure(Connection $connection): PromiseInterface
     {
         return $connection
-            ->queryBySQL('CREATE TABLE IF NOT EXISTS test (id VARCHAR, field1 VARCHAR, field2 VARCHAR)')
+            ->queryBySQL('CREATE TABLE IF NOT EXISTS test (id VARCHAR PRIMARY KEY, field1 VARCHAR, field2 VARCHAR)')
             ->then(function () use ($connection) {
                 return $connection
                     ->queryBySQL('TRUNCATE TABLE test')
@@ -77,7 +77,8 @@ class PostgreSQLConnectionTest extends ConnectionTest
             ->queryBySQL('DROP TABLE test')
             ->then(function () use ($connection) {
                 return $connection;
-            }, function (TableNotFoundException $exception) use ($connection) {
+            })
+            ->otherwise(function (TableNotFoundException $exception) use ($connection) {
                 // Silent pass
 
                 return $connection;

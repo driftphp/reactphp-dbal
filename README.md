@@ -59,10 +59,10 @@ use Drift\DBAL\Result;
  */
 $promise = $connection
     ->insert('test', [
-        'id' => '?',
-        'field1' => '?',
-        'field2' => '?',
-    ], ['1', 'val11', 'val12'])
+        'id' => '1',
+        'field1' => 'val1',
+        'field2' => 'val2',
+    ])
     ->then(function(Result $_) use ($connection) {
         $queryBuilder = $connection->createQueryBuilder();
         
@@ -84,6 +84,104 @@ $promise = $connection
 ```
 
 You can use, at this moment, adapters for `mysql`, `postgresql`, and `sqlite`.
+
+## Connection shortcuts
+
+This DBAL introduce some shortcuts useful for your projects on top of Doctrine
+query builder and escaping parametrization.
+
+### Insert
+
+Inserts a new row in a table. Needs the table and an array with fields and their
+values. Returns a Promise.
+
+```php
+$connection->insert('test', [
+    'id' => '1',
+    'field1' => 'value1'
+]);
+```
+
+### Update
+
+Updates an existing row from a table. Needs the table, an identifier as array
+and an array of fields with their values. Returns a Promise.
+
+```php
+$connection->update(
+    'test',
+    ['id' => '1'],
+    [
+        'field1' => 'value1',
+        'field2' => 'value2',
+    ]
+);
+```
+
+### Upsert
+
+Insert a row if not exists. Otherwise, it will update the existing row with
+given values. Needs the table, an identifier as array and an array of fields
+with their values. Returns a Promise.
+
+```php
+$connection->upsert(
+    'test',
+    ['id' => '1'],
+    [
+        'field1' => 'value1',
+        'field2' => 'value2',
+    ]
+);
+```
+
+### Delete
+
+Deletes a row if exists. Needs the table and the identifier as array. Returns a
+Promise.
+
+```php
+$connection->delete('test', [
+    'id' => '1'
+]);
+```
+
+### Find one by
+
+Find a row given a where clause. Needs the table and an array of fields with 
+their values. Returns a Promise with, eventually, the result as array of all
+found rows.
+
+```php
+$connection
+    ->findOneById('test', [
+        'id' => '1'
+    ])
+    ->then(function(?array $result) {
+        if (is_null($result)) {
+            // Row with ID=1 not found
+        } else {
+            // Row with ID=1 found.
+            echo $result['id'];
+        }   
+    });
+```
+
+### Find by
+
+Find all rows given an array of where clauses. Needs the table and an array of
+fields with their values. Returns a Promise with, eventually, the result as
+array of all found rows.
+
+```php
+$connection
+    ->findBy('test', [
+        'age' => '33'
+    ])
+    ->then(function(array $result) {
+        echo 'Found ' . count($result) . ' rows'; 
+    });
+```
 
 ## Tests
 

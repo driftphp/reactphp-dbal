@@ -16,9 +16,11 @@ declare(strict_types=1);
 namespace Drift\DBAL\Tests;
 
 use Doctrine\DBAL\Exception\TableNotFoundException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Drift\DBAL\Connection;
 use Drift\DBAL\Result;
 use function Clue\React\Block\await;
+use function React\Promise\all;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
@@ -62,6 +64,22 @@ abstract class ConnectionTest extends TestCase
     abstract protected function dropInfrastructure(Connection $connection): PromiseInterface;
 
     /**
+     * Create database and table.
+     *
+     * @param Connection $connection
+     *
+     * @return PromiseInterface
+     */
+    protected function resetInfrastructure(Connection $connection): PromiseInterface
+    {
+        return $this
+            ->dropInfrastructure($connection)
+            ->then(function () use ($connection) {
+                return $this->createInfrastructure($connection);
+            });
+    }
+
+    /**
      * Create loop Loop.
      */
     protected function createLoop()
@@ -96,14 +114,14 @@ abstract class ConnectionTest extends TestCase
         $loop = $this->createLoop();
         $connection = $this->getConnection($loop);
         $promise = $this
-            ->createInfrastructure($connection)
+            ->resetInfrastructure($connection)
             ->then(function (Connection $connection) {
                 return $connection
                     ->insert('test', [
                         'id' => '1',
-                        'field1' => '?',
-                        'field2' => '?',
-                    ], ['val1', 'val2'])
+                        'field1' => 'val1',
+                        'field2' => 'val2',
+                    ])
                     ->then(function () use ($connection) {
                         return $connection
                             ->query($connection
@@ -135,27 +153,27 @@ abstract class ConnectionTest extends TestCase
         $loop = $this->createLoop();
         $connection = $this->getConnection($loop);
         $promise = $this
-            ->createInfrastructure($connection)
+            ->resetInfrastructure($connection)
             ->then(function (Connection $connection) {
                 return $connection
                     ->insert('test', [
-                            'id' => '?',
-                            'field1' => '?',
-                            'field2' => '?',
-                        ], ['1', 'val11', 'val12'])
+                            'id' => '1',
+                            'field1' => 'val11',
+                            'field2' => 'val12',
+                        ])
                     ->then(function () use ($connection) {
                         return $connection->insert('test', [
-                            'id' => '?',
-                            'field1' => '?',
-                            'field2' => '?',
-                        ], ['2', 'val21', 'val22']);
+                            'id' => '2',
+                            'field1' => 'val21',
+                            'field2' => 'val22',
+                        ]);
                     })
                     ->then(function () use ($connection) {
                         return $connection->insert('test', [
-                            'id' => '?',
-                            'field1' => '?',
-                            'field2' => '?',
-                        ], ['3', 'val31', 'val32']);
+                            'id' => '3',
+                            'field1' => 'val31',
+                            'field2' => 'val32',
+                        ]);
                     });
             })
             ->then(function () use ($connection) {
@@ -181,8 +199,6 @@ abstract class ConnectionTest extends TestCase
 
     /**
      * Test connection exception.
-     *
-     * @group lol
      */
     public function testTableDoesntExistException()
     {
@@ -191,13 +207,189 @@ abstract class ConnectionTest extends TestCase
         $promise = $this->dropInfrastructure($connection)
             ->then(function (Connection $connection) {
                 return $connection->insert('test', [
-                    'id' => '?',
-                    'field1' => '?',
-                    'field2' => '?',
-                ], ['1', 'val11', 'val12']);
+                    'id' => '1',
+                    'field1' => 'val11',
+                    'field2' => 'val12',
+                ]);
             });
 
         $this->expectException(TableNotFoundException::class);
         await($promise, $loop);
+    }
+
+    /**
+     * Test find shortcut.
+     */
+    public function testFindShortcut()
+    {
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+        $promise = $this
+            ->resetInfrastructure($connection)
+            ->then(function (Connection $connection) {
+                return all([
+                    $connection
+                        ->insert('test', [
+                            'id' => '1',
+                            'field1' => 'val1',
+                            'field2' => 'val1',
+                        ]),
+                    $connection
+                        ->insert('test', [
+                            'id' => '2',
+                            'field1' => 'val1',
+                            'field2' => 'val2',
+                        ]),
+                    $connection
+                        ->insert('test', [
+                            'id' => '3',
+                            'field1' => 'valX',
+                            'field2' => 'val2',
+                        ]),
+                ])
+                ->then(function () use ($connection) {
+                    return all([
+                        $connection->findOneBy('test', [
+                            'id' => '1',
+                        ]),
+                        $connection->findOneBy('test', [
+                            'id' => '999',
+                        ]),
+                        $connection->findBy('test', [
+                            'field1' => 'val1',
+                        ]),
+                    ]);
+                })
+                ->then(function (array $results) {
+                    $this->assertEquals($results[0], [
+                        'id' => '1',
+                        'field1' => 'val1',
+                        'field2' => 'val1',
+                    ]);
+
+                    $this->assertNull($results[1]);
+                    $this->assertEquals($results[2], [
+                        [
+                            'id' => '1',
+                            'field1' => 'val1',
+                            'field2' => 'val1',
+                        ],
+                        [
+                            'id' => '2',
+                            'field1' => 'val1',
+                            'field2' => 'val2',
+                        ],
+                    ]);
+                });
+            });
+
+        await($promise, $loop, self::MAX_TIMEOUT);
+    }
+
+    /**
+     * Test insert twice exists.
+     */
+    public function testInsertTwice()
+    {
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+        $promise = $this
+            ->resetInfrastructure($connection)
+            ->then(function (Connection $connection) {
+                return $connection
+                    ->insert('test', [
+                        'id' => '1',
+                        'field1' => 'val1',
+                        'field2' => 'val1',
+                    ])
+                    ->then(function () use ($connection) {
+                        return $connection->insert('test', [
+                            'id' => '1',
+                            'field1' => 'val1',
+                            'field2' => 'val1',
+                        ]);
+                    });
+            });
+
+        $this->expectException(UniqueConstraintViolationException::class);
+        await($promise, $loop, self::MAX_TIMEOUT);
+    }
+
+    /**
+     * Test update.
+     */
+    public function testUpdate()
+    {
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+        $promise = $this
+            ->resetInfrastructure($connection)
+            ->then(function (Connection $connection) {
+                return $connection->insert('test', [
+                    'id' => '1',
+                    'field1' => 'val1',
+                    'field2' => 'val1',
+                ]);
+            })
+            ->then(function () use ($connection) {
+                return $connection->update('test', [
+                    'id' => '1',
+                ], [
+                    'field1' => 'val3',
+                ]);
+            })
+            ->then(function () use ($connection) {
+                return $connection->findOneBy('test', ['id' => '1']);
+            })
+            ->then(function (array $result) {
+                $this->assertEquals('val3', $result['field1']);
+            });
+
+        await($promise, $loop, self::MAX_TIMEOUT);
+    }
+
+    /**
+     * Test upsert.
+     */
+    public function testUpsert()
+    {
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+        $promise = $this
+            ->resetInfrastructure($connection)
+            ->then(function (Connection $connection) {
+                return $connection->insert('test', [
+                    'id' => '1',
+                    'field1' => 'val1',
+                    'field2' => 'val2',
+                ]);
+            })
+            ->then(function () use ($connection) {
+                return all([
+                    $connection->upsert(
+                        'test',
+                        ['id' => '1'],
+                        ['field1' => 'val3']
+                    ),
+                    $connection->upsert(
+                        'test',
+                        ['id' => '2'],
+                        ['field1' => 'val5', 'field2' => 'val6']
+                    ),
+                ]);
+            })
+            ->then(function () use ($connection) {
+                return $connection->findBy('test');
+            })
+            ->then(function (array $results) {
+                $this->assertEquals('1', $results[0]['id']);
+                $this->assertEquals('val3', $results[0]['field1']);
+                $this->assertEquals('val2', $results[0]['field2']);
+                $this->assertEquals('2', $results[1]['id']);
+                $this->assertEquals('val5', $results[1]['field1']);
+                $this->assertEquals('val6', $results[1]['field2']);
+            });
+
+        await($promise, $loop, self::MAX_TIMEOUT);
     }
 }

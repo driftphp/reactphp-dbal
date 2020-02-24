@@ -91,7 +91,7 @@ class PostgreSQLDriver implements Driver
             ->executeStatement($sql, $parameters)
             ->subscribe(function ($row) use (&$results) {
                 $results[] = $row;
-            }, function (ErrorException $exception) {
+            }, function (ErrorException $exception) use ($deferred) {
                 $errorResponse = $exception->getErrorResponse();
                 $message = $exception->getMessage();
                 $code = 0;
@@ -101,7 +101,16 @@ class PostgreSQLDriver implements Driver
                     }
                 }
 
-                throw $this->doctrineDriver->convertException($message, PlainDriverException::createFromMessageAndErrorCode($message, (string) $code));
+                $exception = $this
+                    ->doctrineDriver
+                    ->convertException(
+                        $message,
+                        PlainDriverException::createFromMessageAndErrorCode(
+                            $message,
+                            (string) $code
+                        ));
+
+                $deferred->reject($exception);
             }, function () use (&$results, $deferred) {
                 $deferred->resolve($results);
             });
