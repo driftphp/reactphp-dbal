@@ -20,7 +20,7 @@ use Doctrine\DBAL\Driver;
 use Exception;
 
 /**
- * Class MockedDriver
+ * Class MockedDriver.
  */
 class MockedDriver implements Driver
 {
