@@ -1,6 +1,6 @@
 {
-    "name": "drift/redis-bundle",
-    "description": "DBAL for ReactPHP",
+    "name": "drift/dbal",
+    "description": "DBAL for ReactPHP on top of Doctrine",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -12,14 +12,18 @@
     "require": {
         "php": "^7.3",
         "doctrine/dbal": "*",
-        "react/event-loop": "*",
-
+        "react/event-loop": "*"
+    },
+    "require-dev": {
+        "clue/block-react": "*",
         "react/mysql": "*",
         "clue/reactphp-sqlite": "*",
         "voryx/pgasync": "*"
     },
-    "require-dev": {
-      "clue/block-react": "*"
+    "suggest": {
+        "react/mysql": "MySQL usage",
+        "clue/reactphp-sqlite": "SQLite usage",
+        "voryx/pgasync": "PostgreSQL Usage"
     },
     "autoload": {
         "psr-4": {

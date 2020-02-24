@@ -23,7 +23,7 @@ connection data.
 ```php
 use Doctrine\DBAL\Platforms\MySqlPlatform;
 use Drift\DBAL\Connection;
-use Drift\DBAL\Driver\MysqlDriver;
+use Drift\DBAL\Driver\Mysql\MysqlDriver;
 use Drift\DBAL\Credentials;
 use React\EventLoop\Factory as LoopFactory;
 
