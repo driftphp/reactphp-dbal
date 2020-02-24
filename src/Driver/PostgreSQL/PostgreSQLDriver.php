@@ -46,8 +46,6 @@ class PostgreSQLDriver implements Driver
     private $doctrineDriver;
 
     /**
-     * MysqlDriver constructor.
-     *
      * @param LoopInterface $loop
      */
     public function __construct(LoopInterface $loop)
