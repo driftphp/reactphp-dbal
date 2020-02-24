@@ -11,14 +11,15 @@
     ],
     "require": {
         "php": "^7.3",
-        "doctrine/dbal": "*",
-        "react/event-loop": "*"
+        "doctrine/dbal": "^2.5",
+        "react/event-loop": "^1"
     },
     "require-dev": {
+        "phpunit/phpunit": "7.5.17",
         "clue/block-react": "*",
-        "react/mysql": "*",
-        "clue/reactphp-sqlite": "*",
-        "voryx/pgasync": "*"
+        "react/mysql": "^0.5",
+        "clue/reactphp-sqlite": "^1",
+        "voryx/pgasync": "^2"
     },
     "suggest": {
         "react/mysql": "MySQL usage",
