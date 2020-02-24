@@ -73,15 +73,18 @@ class PostgreSQLDriver implements Driver
      */
     public function query(
         string $sql,
-        array $parameters
+        array $parameters,
+        bool $normalize
     ): PromiseInterface {
         /**
          * We should fix the parametrization.
          */
-        $i = 1;
-        $sql = preg_replace_callback('~\?~', function ($_) use (&$i) {
-            return '$'.$i++;
-        }, $sql);
+        if ($normalize) {
+            $i = 1;
+            $sql = preg_replace_callback('~\?~', function ($_) use (&$i) {
+                return '$' . $i++;
+            }, $sql);
+        }
 
         $results = [];
         $deferred = new Deferred();

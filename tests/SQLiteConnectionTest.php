@@ -81,4 +81,14 @@ class SQLiteConnectionTest extends ConnectionTest
                 return $connection;
             });
     }
+
+    /**
+     * Get native query
+     *
+     * @return PromiseInterface
+     */
+    protected function getNativeQuery(): string
+    {
+        return 'select * from test t where t.id = ? and t.field2 = ? LIMIT 1';
+    }
 }

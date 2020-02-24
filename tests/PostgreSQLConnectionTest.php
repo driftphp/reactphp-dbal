@@ -83,4 +83,14 @@ class PostgreSQLConnectionTest extends ConnectionTest
                 return $connection;
             });
     }
+
+    /**
+     * Get native query
+     *
+     * @return PromiseInterface
+     */
+    protected function getNativeQuery(): string
+    {
+        return 'select * from test t where t.id = $1 and t.field2 = $2';
+    }
 }

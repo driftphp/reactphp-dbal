@@ -62,6 +62,13 @@ abstract class ConnectionTest extends TestCase
     abstract protected function dropInfrastructure(Connection $connection): PromiseInterface;
 
     /**
+     * Get native query
+     *
+     * @return PromiseInterface
+     */
+    abstract protected function getNativeQuery(): string;
+
+    /**
      * Create loop Loop.
      */
     protected function createLoop()
@@ -181,8 +188,6 @@ abstract class ConnectionTest extends TestCase
 
     /**
      * Test connection exception.
-     *
-     * @group lol
      */
     public function testTableDoesntExistException()
     {
@@ -199,5 +204,40 @@ abstract class ConnectionTest extends TestCase
 
         $this->expectException(TableNotFoundException::class);
         await($promise, $loop);
+    }
+
+    /**
+     * Test native query
+     */
+    public function testNativeQuery()
+    {
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+        $promise = $this
+            ->createInfrastructure($connection)
+            ->then(function (Connection $connection) {
+                return $connection
+                    ->insert('test', [
+                        'id' => '1',
+                        'field1' => '?',
+                        'field2' => '?',
+                    ], ['val1', 'val2'])
+                    ->then(function () use ($connection) {
+                        return $connection
+                            ->queryNative(
+                                $this->getNativeQuery(),
+                                ['1', 'val2']
+                            );
+                    })
+                    ->then(function (Result $result) {
+                        $this->assertEquals($result->fetchFirstRow(), [
+                            'id' => '1',
+                            'field1' => 'val1',
+                            'field2' => 'val2',
+                        ]);
+                    });
+            });
+
+        await($promise, $loop, self::MAX_TIMEOUT);
     }
 }

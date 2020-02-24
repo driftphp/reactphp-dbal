@@ -72,7 +72,8 @@ class SQLiteDriver implements Driver
      */
     public function query(
         string $sql,
-        array $parameters
+        array $parameters,
+        bool  $normalize
     ): PromiseInterface {
         return $this
             ->database

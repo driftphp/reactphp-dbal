@@ -147,11 +147,26 @@ class Connection
      *
      * @return PromiseInterface
      */
-    public function queryBySQL(string $queryBuilder, array $parameters = []): PromiseInterface
+    public function queryBySQL(string $sql, array $parameters = []): PromiseInterface
     {
         return $this
             ->driver
-            ->query($queryBuilder, $parameters);
+            ->query($sql, $parameters, true);
+    }
+
+    /**
+     * Query by sql and parameters.
+     *
+     * @param string $nativeSQL
+     * @param array  $parameters
+     *
+     * @return PromiseInterface
+     */
+    public function queryNative(string $nativeSQL, array $parameters = []): PromiseInterface
+    {
+        return $this
+            ->driver
+            ->query($nativeSQL, $parameters, false);
     }
 
     /**

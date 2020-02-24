@@ -38,11 +38,13 @@ interface Driver
      *
      * @param string $sql
      * @param array  $parameters
+     * @param bool  $normalize
      *
      * @return PromiseInterface
      */
     public function query(
         string $sql,
-        array $parameters
+        array $parameters,
+        bool  $normalize
     ): PromiseInterface;
 }

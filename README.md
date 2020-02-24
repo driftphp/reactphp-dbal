@@ -85,6 +85,20 @@ $promise = $connection
 
 You can use, at this moment, adapters for `mysql`, `postgresql`, and `sqlite`.
 
+## Native queries
+
+The connection object also accepts native queries. This is a specific PostgreSQL
+query on top of [Voryx/PgAsync](https://github.com/voryx/PgAsync)
+implementation. By using `query`, you normalize the way parameters are
+introduced, in that case. By using `queryNative`, you will use the original
+format.
+
+```php
+$connection->query('select * from test where id = ?', ['1']);
+$connection->queryNative('select * from test where id = $1', ['1']);
+```
+
 ## Tests
 
-You can run tests by running `docker-compose up` and by doing `phpunit`.
+You can run tests by running `docker-compose up` and by doing
+`php vendor/bin/phpunit`.
