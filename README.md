@@ -67,14 +67,14 @@ $promise = $connection
         $queryBuilder = $connection->createQueryBuilder();
         
         return $connection
-            ->query($queryBuilder
+            ->query($queryBuilder)
             ->select('*')
             ->from('test', 't')
             ->where($queryBuilder->expr()->orX(
                 $queryBuilder->expr()->eq('t.id', '?'),
                 $queryBuilder->expr()->eq('t.id', '?')
             ))
-            ->setParameters(['1', '2']));
+            ->setParameters(['1', '2']);
     })
     ->then(function(Result $result) {
         $numberOfRows = $result->fetchCount();
