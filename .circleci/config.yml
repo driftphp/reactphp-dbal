@@ -1,0 +1,55 @@
+version: 2
+jobs:
+  test-php73:
+    docker:
+      - image: circleci/php:7.3-cli
+      - image: postgres:alpine
+        environment:
+          POSTGRES_PASSWORD: root
+          POSTGRES_USER: root
+          POSTGRES_DB: test
+      - image: mysql:5
+        environment:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test
+
+    working_directory: ~/project
+    steps:
+      - checkout
+
+      - run:
+          name: Run tests
+          command: |
+            composer update -n --prefer-dist --prefer-lowest --no-suggest
+            php vendor/bin/phpunit
+
+  test-php74:
+    docker:
+      - image: circleci/php:7.4-cli
+      - image: postgres:alpine
+        environment:
+          POSTGRES_PASSWORD: root
+          POSTGRES_USER: root
+          POSTGRES_DB: test
+      - image: mysql:5
+        environment:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test
+
+    working_directory: ~/project
+    steps:
+      - checkout
+
+      - run:
+          name: Run tests
+          command: |
+            composer update -n --prefer-dist --no-suggest
+            php vendor/bin/phpunit
+
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test-php73
+      - test-php74
