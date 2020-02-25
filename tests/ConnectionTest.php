@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Tests;
 
+use Doctrine\DBAL\Exception\TableExistsException;
 use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Drift\DBAL\Connection;
@@ -46,26 +47,45 @@ abstract class ConnectionTest extends TestCase
     abstract protected function getConnection(LoopInterface $loop): Connection;
 
     /**
-     * Create database and table.
-     *
      * @param Connection $connection
      *
      * @return PromiseInterface
      */
-    abstract protected function createInfrastructure(Connection $connection): PromiseInterface;
+    protected function createInfrastructure(Connection $connection): PromiseInterface
+    {
+        return $connection
+            ->createTable('test', [
+                'id' => 'string',
+                'field1' => 'string',
+                'field2' => 'string'
+            ])
+            ->otherwise(function(TableExistsException $_) use ($connection) {
+                // Silent pass
+
+                return $connection;
+            })
+            ->then(function (Connection $connection) {
+                return $connection->truncateTable('test');
+            });
+    }
 
     /**
-     * Drop infrastructure.
-     *
      * @param Connection $connection
      *
      * @return PromiseInterface
      */
-    abstract protected function dropInfrastructure(Connection $connection): PromiseInterface;
+    protected function dropInfrastructure(Connection $connection): PromiseInterface
+    {
+        return $connection
+            ->dropTable('test')
+            ->otherwise(function (TableNotFoundException $_) use ($connection) {
+                // Silent pass
+
+                return $connection;
+            });
+    }
 
     /**
-     * Create database and table.
-     *
      * @param Connection $connection
      *
      * @return PromiseInterface

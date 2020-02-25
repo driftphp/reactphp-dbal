@@ -17,12 +17,16 @@ namespace Drift\DBAL;
 
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Exception\InvalidArgumentException;
+use Doctrine\DBAL\Exception\TableExistsException;
+use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Query\QueryBuilder;
+use Doctrine\DBAL\Schema\Schema;
 use Drift\DBAL\Driver\Driver;
 use Drift\DBAL\Mock\MockedDBALConnection;
 use Drift\DBAL\Mock\MockedDriver;
 use React\Promise\PromiseInterface;
+use function React\Promise\map;
 
 /**
  * Class Connection.
@@ -152,6 +156,40 @@ class Connection
         return $this
             ->driver
             ->query($sql, $parameters);
+    }
+
+    /**
+     * Execute, sequentially, an array of sqls
+     *
+     * @param string[] $sqls
+     *
+     * @return PromiseInterface<Connection>
+     */
+    public function executeSQLs(array $sqls): PromiseInterface
+    {
+        return
+            map($sqls, function(string $sql) {
+                return $this->queryBySQL($sql);
+            })
+            ->then(function() {
+                return $this;
+            });
+    }
+
+    /**
+     * Execute an schema
+     *
+     * @param Schema $schema
+     *
+     * @return PromiseInterface<Connection>
+     */
+    public function executeSchema(Schema $schema): PromiseInterface
+    {
+        return $this
+            ->executeSQLs($schema->toSql($this->platform))
+            ->then(function() {
+                return $this;
+            });
     }
 
     /**
@@ -306,6 +344,86 @@ class Connection
                 return is_null($result)
                     ? $this->insert($table, array_merge($id, $values))
                     : $this->update($table, $id, $values);
+            });
+    }
+
+    /**
+     * Table related shortcuts
+     */
+
+    /**
+     * Easy shortcut for creating tables. Fields is just a simple key value,
+     * being the key the name of the field, and the value the type. By default,
+     * Varchar types have length 255.
+     *
+     * First field is considered as primary key.
+     *
+     * @param string $name
+     * @param array $fields
+     *
+     * @return PromiseInterface<Connection>
+     *
+     * @throws InvalidArgumentException
+     * @throws TableExistsException
+     */
+    public function createTable(
+        string $name,
+        array $fields
+    ) : PromiseInterface
+    {
+        if (empty($fields)) {
+            throw InvalidArgumentException::fromEmptyFieldsArray();
+        }
+
+        $schema = new Schema();
+        $table = $schema->createTable($name);
+        foreach ($fields as $field => $type) {
+            $extra = [];
+            if ($type = 'string') {
+                $extra = ['length' => 255];
+            }
+
+            $table->addColumn($field, $type, $extra);
+        }
+
+        $table->setPrimaryKey([array_key_first($fields)]);
+
+        return $this->executeSchema($schema);
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return PromiseInterface<Connection>
+     *
+     * @throws TableNotFoundException
+     */
+    public function dropTable(string $name) : PromiseInterface
+    {
+        return $this
+            ->queryBySQL("DROP TABLE $name")
+            ->then(function() {
+                return $this;
+            });
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return PromiseInterface<Connection>
+     *
+     * @throws TableNotFoundException
+     */
+    public function truncateTable(string $name) : PromiseInterface
+    {
+        $truncateTableQuery = $this
+            ->platform
+            ->getTruncateTableSQL($name);
+
+        return $this
+            ->queryBySQL($truncateTableQuery)
+            ->then(function() {
+                return $this;
             });
     }
 

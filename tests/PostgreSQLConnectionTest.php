@@ -15,13 +15,11 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Tests;
 
-use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Platforms\PostgreSqlPlatform;
 use Drift\DBAL\Connection;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\PostgreSQL\PostgreSQLDriver;
 use React\EventLoop\LoopInterface;
-use React\Promise\PromiseInterface;
 
 /**
  * Class PostgreSQLConnectionTest.
@@ -42,46 +40,5 @@ class PostgreSQLConnectionTest extends ConnectionTest
             'root',
             'test'
         ), $mysqlPlatform);
-    }
-
-    /**
-     * Create database and table.
-     *
-     * @param Connection $connection
-     *
-     * @return PromiseInterface
-     */
-    protected function createInfrastructure(Connection $connection): PromiseInterface
-    {
-        return $connection
-            ->queryBySQL('CREATE TABLE IF NOT EXISTS test (id VARCHAR PRIMARY KEY, field1 VARCHAR, field2 VARCHAR)')
-            ->then(function () use ($connection) {
-                return $connection
-                    ->queryBySQL('TRUNCATE TABLE test')
-                    ->then(function () use ($connection) {
-                        return $connection;
-                    });
-            });
-    }
-
-    /**
-     * Drop infrastructure.
-     *
-     * @param Connection $connection
-     *
-     * @return PromiseInterface
-     */
-    protected function dropInfrastructure(Connection $connection): PromiseInterface
-    {
-        return $connection
-            ->queryBySQL('DROP TABLE test')
-            ->then(function () use ($connection) {
-                return $connection;
-            })
-            ->otherwise(function (TableNotFoundException $exception) use ($connection) {
-                // Silent pass
-
-                return $connection;
-            });
     }
 }
