@@ -45,44 +45,4 @@ class MysqlConnectionTest extends ConnectionTest
             'test'
         ), $mysqlPlatform);
     }
-
-    /**
-     * Create database and table.
-     *
-     * @param Connection $connection
-     *
-     * @return PromiseInterface
-     */
-    protected function createInfrastructure(Connection $connection): PromiseInterface
-    {
-        return $connection
-            ->queryBySQL('CREATE TABLE IF NOT EXISTS test (id VARCHAR(255) PRIMARY KEY, field1 VARCHAR(255), field2 VARCHAR (255))')
-            ->then(function () use ($connection) {
-                return $connection
-                    ->queryBySQL('TRUNCATE TABLE test')
-                    ->then(function () use ($connection) {
-                        return $connection;
-                    });
-            });
-    }
-
-    /**
-     * Drop infrastructure.
-     *
-     * @param Connection $connection
-     *
-     * @return PromiseInterface
-     */
-    protected function dropInfrastructure(Connection $connection): PromiseInterface
-    {
-        return $connection
-            ->queryBySQL('DROP TABLE test')
-            ->then(function () use ($connection) {
-                return $connection;
-            }, function (TableNotFoundException $exception) use ($connection) {
-                // Silent pass
-
-                return $connection;
-            });
-    }
 }

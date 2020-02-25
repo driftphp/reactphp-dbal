@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace Drift\DBAL\Driver;
 
 use Drift\DBAL\Credentials;
+use Drift\DBAL\Result;
 use React\Promise\PromiseInterface;
 
 /**
@@ -27,9 +28,6 @@ interface Driver
      * Attempts to create a connection with the database.
      *
      * @param Credentials $credentials
-     * @param array       $options
-     *
-     * @return PromiseInterface
      */
     public function connect(Credentials $credentials);
 
@@ -39,7 +37,7 @@ interface Driver
      * @param string $sql
      * @param array  $parameters
      *
-     * @return PromiseInterface
+     * @return PromiseInterface<Result>
      */
     public function query(
         string $sql,
