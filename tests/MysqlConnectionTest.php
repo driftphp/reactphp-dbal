@@ -15,13 +15,11 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Tests;
 
-use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Platforms\MySqlPlatform;
 use Drift\DBAL\Connection;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\Mysql\MysqlDriver;
 use React\EventLoop\LoopInterface;
-use React\Promise\PromiseInterface;
 
 /**
  * Class MysqlConnectionTest.

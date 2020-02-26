@@ -57,9 +57,9 @@ abstract class ConnectionTest extends TestCase
             ->createTable('test', [
                 'id' => 'string',
                 'field1' => 'string',
-                'field2' => 'string'
+                'field2' => 'string',
             ])
-            ->otherwise(function(TableExistsException $_) use ($connection) {
+            ->otherwise(function (TableExistsException $_) use ($connection) {
                 // Silent pass
 
                 return $connection;
@@ -408,6 +408,40 @@ abstract class ConnectionTest extends TestCase
                 $this->assertEquals('2', $results[1]['id']);
                 $this->assertEquals('val5', $results[1]['field1']);
                 $this->assertEquals('val6', $results[1]['field2']);
+            });
+
+        await($promise, $loop, self::MAX_TIMEOUT);
+    }
+
+    /**
+     * Test delete.
+     */
+    public function testDelete()
+    {
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+        $promise = $this
+            ->resetInfrastructure($connection)
+            ->then(function (Connection $connection) {
+                return $connection->insert('test', [
+                    'id' => '1',
+                    'field1' => 'val1',
+                    'field2' => 'val2',
+                ]);
+            })
+            ->then(function () use ($connection) {
+                return $connection->delete(
+                    'test',
+                    ['id' => '1']
+                );
+            })
+            ->then(function () use ($connection) {
+                return $connection->findOneBy('test', [
+                    'id' => '1',
+                ]);
+            })
+            ->then(function ($result) {
+                $this->assertNull($result);
             });
 
         await($promise, $loop, self::MAX_TIMEOUT);
