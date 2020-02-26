@@ -25,8 +25,8 @@ use Doctrine\DBAL\Schema\Schema;
 use Drift\DBAL\Driver\Driver;
 use Drift\DBAL\Mock\MockedDBALConnection;
 use Drift\DBAL\Mock\MockedDriver;
-use React\Promise\PromiseInterface;
 use function React\Promise\map;
+use React\Promise\PromiseInterface;
 
 /**
  * Class Connection.
@@ -159,7 +159,7 @@ class Connection
     }
 
     /**
-     * Execute, sequentially, an array of sqls
+     * Execute, sequentially, an array of sqls.
      *
      * @param string[] $sqls
      *
@@ -168,16 +168,16 @@ class Connection
     public function executeSQLs(array $sqls): PromiseInterface
     {
         return
-            map($sqls, function(string $sql) {
+            map($sqls, function (string $sql) {
                 return $this->queryBySQL($sql);
             })
-            ->then(function() {
+            ->then(function () {
                 return $this;
             });
     }
 
     /**
-     * Execute an schema
+     * Execute an schema.
      *
      * @param Schema $schema
      *
@@ -187,7 +187,7 @@ class Connection
     {
         return $this
             ->executeSQLs($schema->toSql($this->platform))
-            ->then(function() {
+            ->then(function () {
                 return $this;
             });
     }
@@ -262,7 +262,6 @@ class Connection
 
     /**
      * @param string $table
-     * @param array  $id
      * @param array  $values
      *
      * @return PromiseInterface
@@ -271,10 +270,9 @@ class Connection
      */
     public function delete(
         string $table,
-        array $id,
         array $values
     ): PromiseInterface {
-        if (empty($id)) {
+        if (empty($values)) {
             throw InvalidArgumentException::fromEmptyCriteria();
         }
 
@@ -348,7 +346,7 @@ class Connection
     }
 
     /**
-     * Table related shortcuts
+     * Table related shortcuts.
      */
 
     /**
@@ -359,7 +357,7 @@ class Connection
      * First field is considered as primary key.
      *
      * @param string $name
-     * @param array $fields
+     * @param array  $fields
      *
      * @return PromiseInterface<Connection>
      *
@@ -369,8 +367,7 @@ class Connection
     public function createTable(
         string $name,
         array $fields
-    ) : PromiseInterface
-    {
+    ): PromiseInterface {
         if (empty($fields)) {
             throw InvalidArgumentException::fromEmptyFieldsArray();
         }
@@ -398,11 +395,11 @@ class Connection
      *
      * @throws TableNotFoundException
      */
-    public function dropTable(string $name) : PromiseInterface
+    public function dropTable(string $name): PromiseInterface
     {
         return $this
             ->queryBySQL("DROP TABLE $name")
-            ->then(function() {
+            ->then(function () {
                 return $this;
             });
     }
@@ -414,7 +411,7 @@ class Connection
      *
      * @throws TableNotFoundException
      */
-    public function truncateTable(string $name) : PromiseInterface
+    public function truncateTable(string $name): PromiseInterface
     {
         $truncateTableQuery = $this
             ->platform
@@ -422,7 +419,7 @@ class Connection
 
         return $this
             ->queryBySQL($truncateTableQuery)
-            ->then(function() {
+            ->then(function () {
                 return $this;
             });
     }
