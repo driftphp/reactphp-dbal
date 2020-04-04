@@ -23,32 +23,56 @@ class Result
     /**
      * @var mixed
      */
-    private $data;
+    private $rows;
+
+    /**
+     * @var int|null
+     */
+    private $lastInsertedId;
+
+    /**
+     * @var int|null
+     */
+    private $affectedRows;
 
     /**
      * Result constructor.
      *
-     * @param mixed $data
+     * @param mixed $rows
+     * @param int|null $lastInsertedId
+     * @param int|null $affectedRows
      */
-    public function __construct($data)
+    public function __construct(
+        $rows,
+        ?int $lastInsertedId,
+        ?int $affectedRows
+    )
     {
-        $this->data = $data;
+        $this->rows = $rows;
+        $this->lastInsertedId = $lastInsertedId;
+        $this->affectedRows = $affectedRows;
     }
 
     /**
      * Fetch count.
+     *
+     * @return int
      */
-    public function fetchCount()
+    public function fetchCount() : int
     {
-        return count($this->data);
+        return is_array($this->rows)
+            ? count($this->rows)
+            : 0;
     }
 
     /**
      * Fetch all rows.
+     *
+     * @return mixed
      */
     public function fetchAllRows()
     {
-        return $this->data;
+        return $this->rows;
     }
 
     /**
@@ -58,9 +82,25 @@ class Result
      */
     public function fetchFirstRow()
     {
-        return is_array($this->data)
-            && count($this->data) >= 1
-            ? reset($this->data)
+        return is_array($this->rows)
+            && count($this->rows) >= 1
+            ? reset($this->rows)
             : null;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getLastInsertedId(): ?int
+    {
+        return $this->lastInsertedId;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getAffectedRows(): ?int
+    {
+        return $this->affectedRows;
     }
 }

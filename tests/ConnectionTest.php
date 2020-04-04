@@ -48,17 +48,21 @@ abstract class ConnectionTest extends TestCase
 
     /**
      * @param Connection $connection
+     * @param bool $autoincrementedId
      *
      * @return PromiseInterface
      */
-    protected function createInfrastructure(Connection $connection): PromiseInterface
+    protected function createInfrastructure(
+        Connection $connection,
+        bool $autoincrementedId = false
+    ): PromiseInterface
     {
         return $connection
             ->createTable('test', [
-                'id' => 'string',
+                'id' => $autoincrementedId ? 'integer' : 'string',
                 'field1' => 'string',
                 'field2' => 'string',
-            ])
+            ], [], $autoincrementedId)
             ->otherwise(function (TableExistsException $_) use ($connection) {
                 // Silent pass
 
@@ -87,15 +91,19 @@ abstract class ConnectionTest extends TestCase
 
     /**
      * @param Connection $connection
+     * @param bool $autoincrementedId
      *
      * @return PromiseInterface
      */
-    protected function resetInfrastructure(Connection $connection): PromiseInterface
+    protected function resetInfrastructure(
+        Connection $connection,
+        bool $autoincrementedId = false
+    ): PromiseInterface
     {
         return $this
             ->dropInfrastructure($connection)
-            ->then(function () use ($connection) {
-                return $this->createInfrastructure($connection);
+            ->then(function () use ($connection, $autoincrementedId) {
+                return $this->createInfrastructure($connection, $autoincrementedId);
             });
     }
 
@@ -442,6 +450,66 @@ abstract class ConnectionTest extends TestCase
             })
             ->then(function ($result) {
                 $this->assertNull($result);
+            });
+
+        await($promise, $loop, self::MAX_TIMEOUT);
+    }
+
+    /**
+     * Test get last inserted id
+     *
+     * @group lele
+     */
+    public function testGetLastInsertedId()
+    {
+        if (get_class($this) === PostgreSQLConnectionTest::class) {
+            $this->markTestSkipped('Not implemented yet on postgresql');
+            return;
+        }
+
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+        $promise = $this
+            ->resetInfrastructure($connection, true)
+            ->then(function (Connection $connection) {
+                return $connection->insert('test', [
+                    'field1' => 'val1',
+                    'field2' => 'val2',
+                ]);
+            })
+            ->then(function(Result $result) {
+                $this->assertEquals(1, $result->getLastInsertedId());
+            })
+            ->then(function () use ($connection) {
+                return all([
+                    $connection->insert('test', [
+                            'field1' => 'val3',
+                            'field2' => 'val4',
+                        ]),
+                    $connection->insert('test', [
+                        'field1' => 'val5',
+                        'field2' => 'val6',
+                    ])
+                ]);
+            })
+            ->then(function(array $results) {
+                $this->assertEquals(1, $results[0]->getAffectedRows());
+                $this->assertEquals(3, $results[1]->getLastInsertedId());
+            })
+            ->then(function () use ($connection) {
+                return all([
+                    $connection->delete('test', [
+                        'id' => 2,
+                    ]),
+                    $connection->insert('test', [
+                        'field1' => 'val7',
+                        'field2' => 'val8',
+                    ])
+                ]);
+            })
+            ->then(function(array$results) {
+                $this->assertEquals(1, $results[0]->getAffectedRows());
+                $this->assertEquals(4, $results[1]->getLastInsertedId());
             });
 
         await($promise, $loop, self::MAX_TIMEOUT);

@@ -118,7 +118,7 @@ class PostgreSQLDriver implements Driver
         return $deferred
             ->promise()
             ->then(function ($results) {
-                return new Result($results);
+                return new Result($results, null, null);
             });
     }
 }

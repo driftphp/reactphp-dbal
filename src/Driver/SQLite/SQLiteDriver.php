@@ -78,7 +78,12 @@ class SQLiteDriver implements Driver
             ->database
             ->query($sql, $parameters)
             ->then(function (SQLiteResult $sqliteResult) {
-                return new Result($sqliteResult->rows);
+
+                return new Result(
+                    $sqliteResult->rows,
+                    $sqliteResult->insertId,
+                    $sqliteResult->changed
+                );
             })
             ->otherwise(function (RuntimeException $exception) {
                 $message = $exception->getMessage();

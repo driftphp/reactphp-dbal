@@ -82,7 +82,12 @@ class MysqlDriver implements Driver
             ->connection
             ->query($sql, $parameters)
             ->then(function (QueryResult $queryResult) {
-                return new Result($queryResult->resultRows);
+
+                return new Result(
+                    $queryResult->resultRows,
+                    $queryResult->insertId,
+                    $queryResult->affectedRows
+                );
             })
             ->otherwise(function (Exception $exception) {
                 $message = $exception->getMessage();
