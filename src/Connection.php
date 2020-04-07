@@ -358,6 +358,8 @@ class Connection
      *
      * @param string $name
      * @param array  $fields
+     * @param array  $extra
+     * @param bool   $autoincrementId
      *
      * @return PromiseInterface<Connection>
      *
@@ -366,7 +368,9 @@ class Connection
      */
     public function createTable(
         string $name,
-        array $fields
+        array $fields,
+        array $extra = [],
+        bool $autoincrementId = false
     ): PromiseInterface {
         if (empty($fields)) {
             throw InvalidArgumentException::fromEmptyFieldsArray();
@@ -375,15 +379,24 @@ class Connection
         $schema = new Schema();
         $table = $schema->createTable($name);
         foreach ($fields as $field => $type) {
-            $extra = [];
-            if ($type = 'string') {
-                $extra = ['length' => 255];
+            $extraField = (
+                array_key_exists($field, $extra) &&
+                is_array($extra[$field])
+            ) ? $extra[$field] : [];
+
+            if (
+                $type == 'string' &&
+                !array_key_exists('length', $extraField)
+            ) {
+                $extraField = ['length' => 255];
             }
 
-            $table->addColumn($field, $type, $extra);
+            $table->addColumn($field, $type, $extraField);
         }
 
-        $table->setPrimaryKey([array_key_first($fields)]);
+        $id = array_key_first($fields);
+        $table->setPrimaryKey([$id]);
+        $table->getColumn($id)->setAutoincrement($autoincrementId);
 
         return $this->executeSchema($schema);
     }
