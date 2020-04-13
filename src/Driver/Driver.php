@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Driver;
 
+use Doctrine\DBAL\Query\QueryBuilder;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Result;
 use React\Promise\PromiseInterface;
@@ -43,4 +44,6 @@ interface Driver
         string $sql,
         array $parameters
     ): PromiseInterface;
+
+    public function insert(QueryBuilder $queryBuilder, string $table, array $values): PromiseInterface;
 }
