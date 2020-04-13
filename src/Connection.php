@@ -248,16 +248,10 @@ class Connection
         string $table,
         array $values
     ): PromiseInterface {
-        $queryBuilder = $this
-            ->createQueryBuilder()
-            ->insert($table)
-            ->values(array_combine(
-                array_keys($values),
-                array_fill(0, count($values), '?')
-            ))
-            ->setParameters(array_values($values));
 
-        return $this->query($queryBuilder);
+        $queryBuilder = $this->createQueryBuilder();
+
+        return $this->driver->insert($queryBuilder, $table, $values);
     }
 
     /**

@@ -15,7 +15,9 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Driver\PostgreSQL;
 
+use Doctrine\DBAL\Query\QueryBuilder;
 use Drift\DBAL\Credentials;
+use Drift\DBAL\Driver\AbstractDriver;
 use Drift\DBAL\Driver\Driver;
 use Drift\DBAL\Driver\PlainDriverException;
 use Drift\DBAL\Result;
@@ -28,7 +30,7 @@ use React\Promise\PromiseInterface;
 /**
  * Class PostgreSQLDriver.
  */
-class PostgreSQLDriver implements Driver
+class PostgreSQLDriver extends AbstractDriver implements Driver
 {
     /**
      * @var Client
@@ -120,5 +122,21 @@ class PostgreSQLDriver implements Driver
             ->then(function ($results) {
                 return new Result($results, null, null);
             });
+    }
+
+    public function insert(QueryBuilder $queryBuilder, string $table, array $values): PromiseInterface
+    {
+
+        $queryBuilder = $this->createInsertQuery($queryBuilder, $table, $values);
+        $query = "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = ?";
+
+        return $this->query($query, [$table])->then(function (Result $response) use($queryBuilder){
+            $allRows = $response->fetchAllRows();
+            $fields = array_map(function ($item){
+                return $item['column_name'];
+            }, $allRows);
+
+            return $this->query($queryBuilder->getSQL() . ' RETURNING ' . implode(',', $fields), $queryBuilder->getParameters());
+        });
     }
 }
