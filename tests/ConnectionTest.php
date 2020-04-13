@@ -508,12 +508,6 @@ abstract class ConnectionTest extends TestCase
      */
     public function testGetLastInsertedId()
     {
-        if (PostgreSQLConnectionTest::class === get_class($this)) {
-            $this->markTestSkipped('Not implemented yet on postgresql');
-
-            return;
-        }
-
         $loop = $this->createLoop();
         $connection = $this->getConnection($loop);
         $promise = $this

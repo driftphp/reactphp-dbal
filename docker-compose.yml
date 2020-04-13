@@ -4,7 +4,7 @@ services:
 
   postgres:
     image: "postgres:alpine"
-    container_name: postgres
+    container_name: postgres-drift
     environment:
       POSTGRES_PASSWORD: root
       POSTGRES_USER: root
@@ -14,7 +14,7 @@ services:
 
   mysql:
     image: "mysql:5"
-    container_name: mysql
+    container_name: mysql-drift
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: test
