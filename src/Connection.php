@@ -373,7 +373,7 @@ class Connection
         bool $autoincrementId = false
     ): PromiseInterface {
         if (empty($fields)) {
-            throw InvalidArgumentException::fromEmptyFieldsArray();
+            throw InvalidArgumentException::fromEmptyCriteria();
         }
 
         $schema = new Schema();
@@ -385,10 +385,13 @@ class Connection
             ) ? $extra[$field] : [];
 
             if (
-                $type == 'string' &&
+                'string' == $type &&
                 !array_key_exists('length', $extraField)
             ) {
-                $extraField = ['length' => 255];
+                $extraField = array_merge(
+                    $extraField,
+                    ['length' => 255]
+                );
             }
 
             $table->addColumn($field, $type, $extraField);
@@ -483,9 +486,17 @@ class Connection
     ) {
         $params = $queryBuilder->getParameters();
         foreach ($array as $field => $value) {
+            if (\is_null($value)) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->isNull($field)
+                );
+                continue;
+            }
+
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq($field, '?')
             );
+
             $params[] = $value;
         }
 

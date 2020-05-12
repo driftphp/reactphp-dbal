@@ -38,7 +38,7 @@ class Result
     /**
      * Result constructor.
      *
-     * @param mixed $rows
+     * @param mixed    $rows
      * @param int|null $lastInsertedId
      * @param int|null $affectedRows
      */
@@ -46,8 +46,7 @@ class Result
         $rows,
         ?int $lastInsertedId,
         ?int $affectedRows
-    )
-    {
+    ) {
         $this->rows = $rows;
         $this->lastInsertedId = $lastInsertedId;
         $this->affectedRows = $affectedRows;
@@ -58,7 +57,7 @@ class Result
      *
      * @return int
      */
-    public function fetchCount() : int
+    public function fetchCount(): int
     {
         return is_array($this->rows)
             ? count($this->rows)

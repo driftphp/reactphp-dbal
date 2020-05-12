@@ -78,7 +78,6 @@ class SQLiteDriver implements Driver
             ->database
             ->query($sql, $parameters)
             ->then(function (SQLiteResult $sqliteResult) {
-
                 return new Result(
                     $sqliteResult->rows,
                     $sqliteResult->insertId,
