@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Tests;
 
+use Doctrine\DBAL\Exception\InvalidArgumentException;
 use Doctrine\DBAL\Exception\TableExistsException;
 use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -48,21 +49,22 @@ abstract class ConnectionTest extends TestCase
 
     /**
      * @param Connection $connection
-     * @param bool $autoincrementedId
+     * @param bool       $autoincrementedId
      *
      * @return PromiseInterface
      */
     protected function createInfrastructure(
         Connection $connection,
         bool $autoincrementedId = false
-    ): PromiseInterface
-    {
+    ): PromiseInterface {
         return $connection
             ->createTable('test', [
                 'id' => $autoincrementedId ? 'integer' : 'string',
                 'field1' => 'string',
                 'field2' => 'string',
-            ], [], $autoincrementedId)
+            ], [
+                'field2' => ['notnull' => false],
+            ], $autoincrementedId)
             ->otherwise(function (TableExistsException $_) use ($connection) {
                 // Silent pass
 
@@ -91,15 +93,14 @@ abstract class ConnectionTest extends TestCase
 
     /**
      * @param Connection $connection
-     * @param bool $autoincrementedId
+     * @param bool       $autoincrementedId
      *
      * @return PromiseInterface
      */
     protected function resetInfrastructure(
         Connection $connection,
         bool $autoincrementedId = false
-    ): PromiseInterface
-    {
+    ): PromiseInterface {
         return $this
             ->dropInfrastructure($connection)
             ->then(function () use ($connection, $autoincrementedId) {
@@ -132,6 +133,17 @@ abstract class ConnectionTest extends TestCase
             ->getSQL();
 
         $this->assertEquals('SELECT * FROM user u WHERE u.id = :id LIMIT 1', $sql);
+    }
+
+    /**
+     * Test create table with empty criteria.
+     */
+    public function testCreateTableWithEmptyCriteria()
+    {
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+        $this->expectException(InvalidArgumentException::class);
+        await($connection->createTable('anothertable', []), $loop);
     }
 
     /**
@@ -315,6 +327,40 @@ abstract class ConnectionTest extends TestCase
     }
 
     /**
+     * Test select by null.
+     */
+    public function testFindByNullValue()
+    {
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+        $promise = $this
+            ->resetInfrastructure($connection)
+            ->then(function (Connection $connection) {
+                return $connection
+                    ->insert('test', [
+                        'id' => '1',
+                        'field1' => 'val1',
+                        'field2' => null,
+                    ]);
+            })
+            ->then(function () use ($connection) {
+                return all([
+                    $connection->findOneBy('test', [
+                        'field2' => null,
+                    ]),
+                    $connection->findBy('test', [
+                        'field2' => null,
+                    ]),
+                ]);
+            });
+
+        list($result0, $result1) = await($promise, $loop, self::MAX_TIMEOUT);
+
+        $this->assertEquals('1', $result0['id']);
+        $this->assertCount(1, $result1);
+    }
+
+    /**
      * Test insert twice exists.
      */
     public function testInsertTwice()
@@ -456,14 +502,15 @@ abstract class ConnectionTest extends TestCase
     }
 
     /**
-     * Test get last inserted id
+     * Test get last inserted id.
      *
      * @group lele
      */
     public function testGetLastInsertedId()
     {
-        if (get_class($this) === PostgreSQLConnectionTest::class) {
+        if (PostgreSQLConnectionTest::class === get_class($this)) {
             $this->markTestSkipped('Not implemented yet on postgresql');
+
             return;
         }
 
@@ -477,7 +524,7 @@ abstract class ConnectionTest extends TestCase
                     'field2' => 'val2',
                 ]);
             })
-            ->then(function(Result $result) {
+            ->then(function (Result $result) {
                 $this->assertEquals(1, $result->getLastInsertedId());
             })
             ->then(function () use ($connection) {
@@ -489,10 +536,10 @@ abstract class ConnectionTest extends TestCase
                     $connection->insert('test', [
                         'field1' => 'val5',
                         'field2' => 'val6',
-                    ])
+                    ]),
                 ]);
             })
-            ->then(function(array $results) {
+            ->then(function (array $results) {
                 $this->assertEquals(1, $results[0]->getAffectedRows());
                 $this->assertEquals(3, $results[1]->getLastInsertedId());
             })
@@ -504,10 +551,10 @@ abstract class ConnectionTest extends TestCase
                     $connection->insert('test', [
                         'field1' => 'val7',
                         'field2' => 'val8',
-                    ])
+                    ]),
                 ]);
             })
-            ->then(function(array$results) {
+            ->then(function (array $results) {
                 $this->assertEquals(1, $results[0]->getAffectedRows());
                 $this->assertEquals(4, $results[1]->getLastInsertedId());
             });
