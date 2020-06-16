@@ -248,7 +248,6 @@ class Connection
         string $table,
         array $values
     ): PromiseInterface {
-
         $queryBuilder = $this->createQueryBuilder();
 
         return $this->driver->insert($queryBuilder, $table, $values);
@@ -309,11 +308,7 @@ class Connection
         $queryBuilder->setParameters($parameters);
         $this->applyWhereClausesFromArray($queryBuilder, $id);
 
-        return $this
-            ->query($queryBuilder)
-            ->then(function (Result $result) {
-                return $result->fetchAllRows();
-            });
+        return $this->query($queryBuilder);
     }
 
     /**
