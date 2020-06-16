@@ -21,7 +21,7 @@ use Exception;
 /**
  * Class EmptyDoctrineMysqlDriver.
  */
-final class EmptyDoctrineMysqlDriver
+final class EmptyDoctrineMysqlDriver extends AbstractMySQLDriver
 {
     /**
      * {@inheritdoc}

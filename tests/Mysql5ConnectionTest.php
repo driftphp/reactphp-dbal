@@ -22,9 +22,9 @@ use Drift\DBAL\Driver\Mysql\MysqlDriver;
 use React\EventLoop\LoopInterface;
 
 /**
- * Class MysqlConnectionTest.
+ * Class Mysql5ConnectionTest.
  */
-class MysqlConnectionTest extends ConnectionTest
+class Mysql5ConnectionTest extends ConnectionTest
 {
     /**
      * {@inheritdoc}

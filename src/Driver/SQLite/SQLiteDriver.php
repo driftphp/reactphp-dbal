@@ -18,10 +18,8 @@ namespace Drift\DBAL\Driver\SQLite;
 use Clue\React\SQLite\DatabaseInterface;
 use Clue\React\SQLite\Factory;
 use Clue\React\SQLite\Result as SQLiteResult;
-use Doctrine\DBAL\Query\QueryBuilder;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\AbstractDriver;
-use Drift\DBAL\Driver\Driver;
 use Drift\DBAL\Driver\PlainDriverException;
 use Drift\DBAL\Result;
 use React\EventLoop\LoopInterface;
@@ -31,7 +29,7 @@ use RuntimeException;
 /**
  * Class SQLiteDriver.
  */
-class SQLiteDriver extends AbstractDriver implements Driver
+class SQLiteDriver extends AbstractDriver
 {
     /**
      * @var Factory
@@ -92,5 +90,4 @@ class SQLiteDriver extends AbstractDriver implements Driver
                 throw $this->doctrineDriver->convertException($message, PlainDriverException::createFromMessageAndErrorCode($message, (string) $exception->getCode()));
             });
     }
-
 }

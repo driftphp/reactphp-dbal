@@ -18,7 +18,6 @@ namespace Drift\DBAL\Driver\PostgreSQL;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\AbstractDriver;
-use Drift\DBAL\Driver\Driver;
 use Drift\DBAL\Driver\PlainDriverException;
 use Drift\DBAL\Result;
 use PgAsync\Client;
@@ -30,7 +29,7 @@ use React\Promise\PromiseInterface;
 /**
  * Class PostgreSQLDriver.
  */
-class PostgreSQLDriver extends AbstractDriver implements Driver
+class PostgreSQLDriver extends AbstractDriver
 {
     /**
      * @var Client
@@ -124,19 +123,41 @@ class PostgreSQLDriver extends AbstractDriver implements Driver
             });
     }
 
+    /**
+     * @param QueryBuilder $queryBuilder
+     * @param string       $table
+     * @param array        $values
+     *
+     * @return PromiseInterface
+     */
     public function insert(QueryBuilder $queryBuilder, string $table, array $values): PromiseInterface
     {
-
         $queryBuilder = $this->createInsertQuery($queryBuilder, $table, $values);
-        $query = "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = ?";
+        $query = 'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = ?';
 
-        return $this->query($query, [$table])->then(function (Result $response) use($queryBuilder){
-            $allRows = $response->fetchAllRows();
-            $fields = array_map(function ($item){
-                return $item['column_name'];
-            }, $allRows);
+        return $this
+            ->query($query, [$table])
+            ->then(function (Result $response) use ($queryBuilder) {
+                $allRows = $response->fetchAllRows();
+                $fields = array_map(function ($item) {
+                    return $item['column_name'];
+                }, $allRows);
 
-            return $this->query($queryBuilder->getSQL() . ' RETURNING ' . implode(',', $fields), $queryBuilder->getParameters());
-        });
+                // When there are no fields, means that the table does not exist
+                // To make the normal behavior, we make a simple query and let
+                // the DBAL do the job (no last_inserted_it is expected here
+
+                $returningPart = empty($fields)
+                    ? ''
+                    : ' RETURNING '.implode(',', $fields);
+
+                return $this
+                    ->query($queryBuilder->getSQL().$returningPart, $queryBuilder->getParameters())
+                    ->then(function (Result $result) use ($fields) {
+                        return 0 === count($fields)
+                            ? new Result()
+                            : new Result([], \intval($result->fetchFirstRow()[$fields[0]]), 1);
+                    });
+            });
     }
 }

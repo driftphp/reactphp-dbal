@@ -15,10 +15,8 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Driver\Mysql;
 
-use Doctrine\DBAL\Query\QueryBuilder;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\AbstractDriver;
-use Drift\DBAL\Driver\Driver;
 use Drift\DBAL\Driver\PlainDriverException;
 use Drift\DBAL\Result;
 use React\EventLoop\LoopInterface;
@@ -32,7 +30,7 @@ use React\Socket\ConnectorInterface;
 /**
  * Class MysqlDriver.
  */
-class MysqlDriver extends AbstractDriver implements Driver
+class MysqlDriver extends AbstractDriver
 {
     /**
      * @var Factory
@@ -91,7 +89,6 @@ class MysqlDriver extends AbstractDriver implements Driver
                 );
             })
             ->otherwise(function (Exception $exception) {
-
                 $message = $exception->getMessage();
 
                 throw $this->doctrineDriver->convertException($message, PlainDriverException::createFromMessageAndErrorCode($message, (string) $exception->getCode()));

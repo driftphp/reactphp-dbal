@@ -308,7 +308,12 @@ abstract class ConnectionTest extends TestCase
                     ]);
 
                     $this->assertNull($results[1]);
-                    $this->assertEquals($results[2], [
+                    $listResults = $results[2];
+                    usort($listResults, function ($a1, $a2) {
+                        return $a1['id'] > $a2['id'];
+                    });
+
+                    $this->assertSame($listResults, [
                         [
                             'id' => '1',
                             'field1' => 'val1',
@@ -503,8 +508,6 @@ abstract class ConnectionTest extends TestCase
 
     /**
      * Test get last inserted id.
-     *
-     * @group lele
      */
     public function testGetLastInsertedId()
     {
@@ -524,9 +527,9 @@ abstract class ConnectionTest extends TestCase
             ->then(function () use ($connection) {
                 return all([
                     $connection->insert('test', [
-                            'field1' => 'val3',
-                            'field2' => 'val4',
-                        ]),
+                        'field1' => 'val3',
+                        'field2' => 'val4',
+                    ]),
                     $connection->insert('test', [
                         'field1' => 'val5',
                         'field2' => 'val6',
@@ -534,23 +537,71 @@ abstract class ConnectionTest extends TestCase
                 ]);
             })
             ->then(function (array $results) {
-                $this->assertEquals(1, $results[0]->getAffectedRows());
+                $this->assertEquals(2, $results[0]->getLastInsertedId());
                 $this->assertEquals(3, $results[1]->getLastInsertedId());
             })
             ->then(function () use ($connection) {
-                return all([
-                    $connection->delete('test', [
-                        'id' => 2,
-                    ]),
-                    $connection->insert('test', [
-                        'field1' => 'val7',
-                        'field2' => 'val8',
-                    ]),
+                return $connection->insert('test', [
+                    'field1' => 'val7',
+                    'field2' => 'val8',
                 ]);
             })
-            ->then(function (array $results) {
-                $this->assertEquals(1, $results[0]->getAffectedRows());
-                $this->assertEquals(4, $results[1]->getLastInsertedId());
+            ->then(function (Result $result) {
+                $this->assertEquals(4, $result->getLastInsertedId());
+            });
+
+        await($promise, $loop, self::MAX_TIMEOUT);
+    }
+
+    /**
+     * Test affected rows.
+     */
+    public function testAffectedRows()
+    {
+        if ($this instanceof PostgreSQLConnectionTest) {
+            $this->markTestSkipped('This feature is not implemented in the Postgres client');
+        }
+
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+        $promise = $this
+            ->resetInfrastructure($connection, true)
+            ->then(function (Connection $connection) {
+                return $connection->insert('test', [
+                    'field1' => 'val1',
+                    'field2' => 'val2',
+                ]);
+            })
+            ->then(function (Result $result) use ($connection) {
+                $this->assertEquals(1, $result->getAffectedRows());
+
+                return $connection->insert('test', [
+                    'field1' => 'val1',
+                    'field2' => 'val4',
+                ]);
+            })
+            ->then(function () use ($connection) {
+                return $connection->update('test', [
+                    'field1' => 'val1',
+                ], [
+                    'field2' => 'new5',
+                ]);
+            })
+            ->then(function (Result $result) use ($connection) {
+                $this->assertEquals(2, $result->getAffectedRows());
+
+                return $connection->insert('test', [
+                    'field1' => 'val1',
+                    'field2' => 'val8',
+                ]);
+            })
+            ->then(function () use ($connection) {
+                return $connection->delete('test', [
+                    'field1' => 'val1',
+                ]);
+            })
+            ->then(function (Result $result) {
+                $this->assertEquals(3, $result->getAffectedRows());
             });
 
         await($promise, $loop, self::MAX_TIMEOUT);
