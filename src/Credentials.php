@@ -138,8 +138,14 @@ class Credentials
             $this->dbName
         );
 
+        if (strpos($asString, ':@') === 0) {
+            return rawurldecode(
+                substr($asString, 2)
+            );
+        }
+
         return rawurldecode(
-            str_replace(':@', '', $asString)
+            str_replace(':@', '@', $asString)
         );
     }
 }
