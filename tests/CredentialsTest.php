@@ -8,7 +8,7 @@
  *
  * Feel free to edit as you please, and have fun.
  *
- * @author David Llop <d.lloople@icloud.com>
+ * @author Marc Morera <yuhu@mmoreram.com>
  */
 
 declare(strict_types=1);
