@@ -138,7 +138,7 @@ class Credentials
             $this->dbName
         );
 
-        if (strpos($asString, ':@') === 0) {
+        if (0 === strpos($asString, ':@')) {
             return rawurldecode(
                 substr($asString, 2)
             );

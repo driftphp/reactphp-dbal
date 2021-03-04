@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Tests;
 
-use Doctrine\DBAL\Platforms\MySqlPlatform;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Drift\DBAL\Connection;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\Mysql\MysqlDriver;
@@ -31,7 +31,7 @@ class Mysql5ConnectionTest extends ConnectionTest
      */
     protected function getConnection(LoopInterface $loop): Connection
     {
-        $mysqlPlatform = new MySqlPlatform();
+        $mysqlPlatform = new MySQLPlatform();
 
         return Connection::createConnected(new MysqlDriver(
             $loop

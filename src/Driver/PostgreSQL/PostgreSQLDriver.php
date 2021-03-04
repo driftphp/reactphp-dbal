@@ -15,10 +15,13 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Driver\PostgreSQL;
 
+use Doctrine\DBAL\Driver\API\ExceptionConverter as ExceptionConverterInterface;
+use Doctrine\DBAL\Driver\API\PostgreSQL\ExceptionConverter;
+use Doctrine\DBAL\Query;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\AbstractDriver;
-use Drift\DBAL\Driver\PlainDriverException;
+use Drift\DBAL\Driver\Exception as DoctrineException;
 use Drift\DBAL\Result;
 use PgAsync\Client;
 use PgAsync\ErrorException;
@@ -31,20 +34,10 @@ use React\Promise\PromiseInterface;
  */
 class PostgreSQLDriver extends AbstractDriver
 {
-    /**
-     * @var Client
-     */
-    private $client;
-
-    /**
-     * @var LoopInterface
-     */
-    private $loop;
-
-    /**
-     * @var EmptyDoctrinePostgreSQLDriver
-     */
-    private $doctrineDriver;
+    private Client $client;
+    private LoopInterface $loop;
+    private EmptyDoctrinePostgreSQLDriver $doctrineDriver;
+    private ExceptionConverterInterface $exceptionConverter;
 
     /**
      * @param LoopInterface $loop
@@ -53,6 +46,7 @@ class PostgreSQLDriver extends AbstractDriver
     {
         $this->doctrineDriver = new EmptyDoctrinePostgreSQLDriver();
         $this->loop = $loop;
+        $this->exceptionConverter = new ExceptionConverter();
     }
 
     /**
@@ -92,9 +86,8 @@ class PostgreSQLDriver extends AbstractDriver
             ->executeStatement($sql, $parameters)
             ->subscribe(function ($row) use (&$results) {
                 $results[] = $row;
-            }, function (ErrorException $exception) use ($deferred) {
+            }, function (ErrorException $exception) use ($deferred, &$sql, &$parameters) {
                 $errorResponse = $exception->getErrorResponse();
-                $message = $exception->getMessage();
                 $code = 0;
                 foreach ($errorResponse->getErrorMessages() as $messageLine) {
                     if ('C' === $messageLine['type']) {
@@ -102,14 +95,12 @@ class PostgreSQLDriver extends AbstractDriver
                     }
                 }
 
-                $exception = $this
-                    ->doctrineDriver
-                    ->convertException(
-                        $message,
-                        PlainDriverException::createFromMessageAndErrorCode(
-                            $message,
-                            (string) $code
-                        ));
+                $exception = $this->exceptionConverter->convert(
+                    new DoctrineException($exception->getMessage(), \strval($code)),
+                    new Query(
+                        $sql, $parameters, []
+                    )
+                );
 
                 $deferred->reject($exception);
             }, function () use (&$results, $deferred) {

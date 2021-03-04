@@ -17,6 +17,9 @@ namespace Drift\DBAL\Mock;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
+use Doctrine\DBAL\Driver\API\ExceptionConverter;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Exception;
 
 /**
@@ -41,9 +44,12 @@ class MockedDriver implements Driver
     }
 
     /**
-     * {@inheritdoc}
+     * Gets the SchemaManager that can be used to inspect and change the underlying
+     * database schema of the platform this driver connects to.
+     *
+     * @return AbstractSchemaManager
      */
-    public function getSchemaManager(Connection $conn)
+    public function getSchemaManager(Connection $conn, AbstractPlatform $platform)
     {
         throw new Exception('Mocked method. Unable to be used');
     }
@@ -60,6 +66,14 @@ class MockedDriver implements Driver
      * {@inheritdoc}
      */
     public function getDatabase(Connection $conn)
+    {
+        throw new Exception('Mocked method. Unable to be used');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getExceptionConverter(): ExceptionConverter
     {
         throw new Exception('Mocked method. Unable to be used');
     }
