@@ -18,9 +18,12 @@ namespace Drift\DBAL\Driver\SQLite;
 use Clue\React\SQLite\DatabaseInterface;
 use Clue\React\SQLite\Factory;
 use Clue\React\SQLite\Result as SQLiteResult;
+use Doctrine\DBAL\Driver\API\ExceptionConverter as ExceptionConverterInterface;
+use Doctrine\DBAL\Driver\API\SQLite\ExceptionConverter;
+use Doctrine\DBAL\Query;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\AbstractDriver;
-use Drift\DBAL\Driver\PlainDriverException;
+use Drift\DBAL\Driver\Exception as DoctrineException;
 use Drift\DBAL\Result;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
@@ -31,20 +34,10 @@ use RuntimeException;
  */
 class SQLiteDriver extends AbstractDriver
 {
-    /**
-     * @var Factory
-     */
-    private $factory;
-
-    /**
-     * @var DatabaseInterface
-     */
-    private $database;
-
-    /**
-     * @var EmptyDoctrineSQLiteDriver
-     */
-    private $doctrineDriver;
+    private Factory $factory;
+    private DatabaseInterface $database;
+    private EmptyDoctrineSQLiteDriver $doctrineDriver;
+    private ExceptionConverterInterface $exceptionConverter;
 
     /**
      * SQLiteDriver constructor.
@@ -55,6 +48,7 @@ class SQLiteDriver extends AbstractDriver
     {
         $this->doctrineDriver = new EmptyDoctrineSQLiteDriver();
         $this->factory = new Factory($loop);
+        $this->exceptionConverter = new ExceptionConverter();
     }
 
     /**
@@ -84,10 +78,8 @@ class SQLiteDriver extends AbstractDriver
                     $sqliteResult->changed
                 );
             })
-            ->otherwise(function (RuntimeException $exception) {
-                $message = $exception->getMessage();
-
-                throw $this->doctrineDriver->convertException($message, PlainDriverException::createFromMessageAndErrorCode($message, (string) $exception->getCode()));
+            ->otherwise(function (RuntimeException $exception) use (&$sql, &$parameters) {
+                throw $this->exceptionConverter->convert(new DoctrineException($exception->getMessage()), new Query($sql, $parameters, []));
             });
     }
 }

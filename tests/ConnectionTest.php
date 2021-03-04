@@ -15,17 +15,17 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Tests;
 
+use function Clue\React\Block\await;
 use Doctrine\DBAL\Exception\InvalidArgumentException;
 use Doctrine\DBAL\Exception\TableExistsException;
 use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Drift\DBAL\Connection;
 use Drift\DBAL\Result;
-use function Clue\React\Block\await;
-use function React\Promise\all;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
+use function React\Promise\all;
 use React\Promise\PromiseInterface;
 
 /**

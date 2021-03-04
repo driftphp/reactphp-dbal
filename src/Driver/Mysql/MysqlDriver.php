@@ -15,9 +15,12 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Driver\Mysql;
 
+use Doctrine\DBAL\Driver\API\ExceptionConverter as ExceptionConverterInterface;
+use Doctrine\DBAL\Driver\API\MySQL\ExceptionConverter;
+use Doctrine\DBAL\Query;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\AbstractDriver;
-use Drift\DBAL\Driver\PlainDriverException;
+use Drift\DBAL\Driver\Exception as DoctrineException;
 use Drift\DBAL\Result;
 use React\EventLoop\LoopInterface;
 use React\MySQL\ConnectionInterface;
@@ -32,20 +35,10 @@ use React\Socket\ConnectorInterface;
  */
 class MysqlDriver extends AbstractDriver
 {
-    /**
-     * @var Factory
-     */
-    private $factory;
-
-    /**
-     * @var ConnectionInterface
-     */
-    private $connection;
-
-    /**
-     * @var EmptyDoctrineMysqlDriver
-     */
-    private $doctrineDriver;
+    private Factory $factory;
+    private ConnectionInterface $connection;
+    private EmptyDoctrineMysqlDriver $doctrineDriver;
+    private ExceptionConverterInterface $exceptionConverter;
 
     /**
      * MysqlDriver constructor.
@@ -59,6 +52,7 @@ class MysqlDriver extends AbstractDriver
         $this->factory = is_null($connector)
             ? new Factory($loop)
             : new Factory($loop, $connector);
+        $this->exceptionConverter = new ExceptionConverter();
     }
 
     /**
@@ -88,10 +82,8 @@ class MysqlDriver extends AbstractDriver
                     $queryResult->affectedRows
                 );
             })
-            ->otherwise(function (Exception $exception) {
-                $message = $exception->getMessage();
-
-                throw $this->doctrineDriver->convertException($message, PlainDriverException::createFromMessageAndErrorCode($message, (string) $exception->getCode()));
+            ->otherwise(function (Exception $exception) use (&$sql, &$parameters) {
+                throw $this->exceptionConverter->convert(new DoctrineException($exception->getMessage(), null, $exception->getCode()), new Query($sql, $parameters, []));
             });
     }
 }
