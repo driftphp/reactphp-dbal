@@ -17,6 +17,7 @@ namespace Drift\DBAL\Driver\PostgreSQL;
 
 use Doctrine\DBAL\Driver\API\ExceptionConverter as ExceptionConverterInterface;
 use Doctrine\DBAL\Driver\API\PostgreSQL\ExceptionConverter;
+use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\Query;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Drift\DBAL\Credentials;
@@ -24,20 +25,23 @@ use Drift\DBAL\Driver\AbstractDriver;
 use Drift\DBAL\Driver\Exception as DoctrineException;
 use Drift\DBAL\Result;
 use PgAsync\Client;
+use PgAsync\Connection;
 use PgAsync\ErrorException;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
+use function React\Promise\reject;
 
 /**
  * Class PostgreSQLDriver.
  */
 class PostgreSQLDriver extends AbstractDriver
 {
-    private Client $client;
+    private Connection $connection;
     private LoopInterface $loop;
     private EmptyDoctrinePostgreSQLDriver $doctrineDriver;
     private ExceptionConverterInterface $exceptionConverter;
+    private bool $isClosed = false;
 
     /**
      * @param LoopInterface $loop
@@ -54,13 +58,15 @@ class PostgreSQLDriver extends AbstractDriver
      */
     public function connect(Credentials $credentials, array $options = [])
     {
-        $this->client = new Client([
-            'host' => $credentials->getHost(),
-            'port' => $credentials->getPort(),
-            'user' => $credentials->getUser(),
-            'password' => $credentials->getPassword(),
-            'database' => $credentials->getDbName(),
-        ], $this->loop);
+        $this->connection =
+            (new Client([
+                'host' => $credentials->getHost(),
+                'port' => $credentials->getPort(),
+                'user' => $credentials->getUser(),
+                'password' => $credentials->getPassword(),
+                'database' => $credentials->getDbName(),
+            ], $this->loop))
+            ->getIdleConnection();
     }
 
     /**
@@ -70,6 +76,10 @@ class PostgreSQLDriver extends AbstractDriver
         string $sql,
         array $parameters
     ): PromiseInterface {
+        if ($this->isClosed) {
+            return reject(new Exception('Connection closed'));
+        }
+
         /**
          * We should fix the parametrization.
          */
@@ -82,7 +92,7 @@ class PostgreSQLDriver extends AbstractDriver
         $deferred = new Deferred();
 
         $this
-            ->client
+            ->connection
             ->executeStatement($sql, $parameters)
             ->subscribe(function ($row) use (&$results) {
                 $results[] = $row;
@@ -123,6 +133,10 @@ class PostgreSQLDriver extends AbstractDriver
      */
     public function insert(QueryBuilder $queryBuilder, string $table, array $values): PromiseInterface
     {
+        if ($this->isClosed) {
+            return reject(new Exception('Connection closed'));
+        }
+
         $queryBuilder = $this->createInsertQuery($queryBuilder, $table, $values);
         $query = 'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = ?';
 
@@ -146,9 +160,20 @@ class PostgreSQLDriver extends AbstractDriver
                     ->query($queryBuilder->getSQL().$returningPart, $queryBuilder->getParameters())
                     ->then(function (Result $result) use ($fields) {
                         return 0 === count($fields)
-                            ? new Result()
+                            ? new Result(0, null, null)
                             : new Result([], \intval($result->fetchFirstRow()[$fields[0]]), 1);
                     });
             });
+    }
+
+    /**
+     * @return void
+     */
+    public function close(): void
+    {
+        $this->isClosed = true;
+        $this
+            ->connection
+            ->disconnect();
     }
 }

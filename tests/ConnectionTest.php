@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace Drift\DBAL\Tests;
 
 use function Clue\React\Block\await;
+use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Exception\InvalidArgumentException;
 use Doctrine\DBAL\Exception\TableExistsException;
 use Doctrine\DBAL\Exception\TableNotFoundException;
@@ -602,6 +603,40 @@ abstract class ConnectionTest extends TestCase
             })
             ->then(function (Result $result) {
                 $this->assertEquals(3, $result->getAffectedRows());
+            });
+
+        await($promise, $loop, self::MAX_TIMEOUT);
+    }
+
+    /**
+     * Test close connection.
+     */
+    public function testCloseConnection()
+    {
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+        $promise = $this
+            ->resetInfrastructure($connection, true)
+            ->then(function (Connection $connection) {
+                return $connection->insert('test', [
+                    'field1' => 'val1',
+                    'field2' => 'val2',
+                ]);
+            })
+            ->then(function (Result $result) use ($connection) {
+                $this->assertEquals(1, $result->getAffectedRows());
+                $connection->close();
+
+                return $connection->insert('test', [
+                    'field1' => 'val1',
+                    'field2' => 'val2',
+                ]);
+            })
+            ->then(function () {
+                $this->fail('An exception should have been thrown');
+            })
+            ->otherwise(function (DBALException $exception) {
+                // Good catch
             });
 
         await($promise, $loop, self::MAX_TIMEOUT);

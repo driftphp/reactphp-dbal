@@ -82,4 +82,12 @@ class SQLiteDriver extends AbstractDriver
                 throw $this->exceptionConverter->convert(new DoctrineException($exception->getMessage()), new Query($sql, $parameters, []));
             });
     }
+
+    /**
+     * @return void
+     */
+    public function close(): void
+    {
+        $this->database->close();
+    }
 }

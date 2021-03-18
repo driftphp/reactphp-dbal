@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace Drift\DBAL;
 
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Exception\InvalidArgumentException;
 use Doctrine\DBAL\Exception\TableExistsException;
 use Doctrine\DBAL\Exception\TableNotFoundException;
@@ -33,20 +33,9 @@ use React\Promise\PromiseInterface;
  */
 class Connection
 {
-    /**
-     * @var Driver
-     */
-    private $driver;
-
-    /**
-     * @var Credentials
-     */
-    private $credentials;
-
-    /**
-     * @var AbstractPlatform
-     */
-    private $platform;
+    private Driver $driver;
+    private Credentials $credentials;
+    private AbstractPlatform $platform;
 
     /**
      * Connection constructor.
@@ -110,6 +99,16 @@ class Connection
         $this
             ->driver
             ->connect($this->credentials);
+    }
+
+    /**
+     * Close.
+     */
+    public function close()
+    {
+        $this
+            ->driver
+            ->close();
     }
 
     /**

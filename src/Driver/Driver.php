@@ -45,5 +45,21 @@ interface Driver
         array $parameters
     ): PromiseInterface;
 
-    public function insert(QueryBuilder $queryBuilder, string $table, array $values): PromiseInterface;
+    /**
+     * @param QueryBuilder $queryBuilder
+     * @param string       $table
+     * @param array        $values
+     *
+     * @return PromiseInterface
+     */
+    public function insert(
+        QueryBuilder $queryBuilder,
+        string $table,
+        array $values
+    ): PromiseInterface;
+
+    /**
+     * @return void
+     */
+    public function close(): void;
 }
