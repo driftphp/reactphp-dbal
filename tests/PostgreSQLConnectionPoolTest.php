@@ -15,33 +15,32 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Tests;
 
-use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Drift\DBAL\Connection;
+use Drift\DBAL\ConnectionPool;
 use Drift\DBAL\Credentials;
-use Drift\DBAL\Driver\Mysql\MysqlDriver;
-use Drift\DBAL\SingleConnection;
+use Drift\DBAL\Driver\PostgreSQL\PostgreSQLDriver;
 use React\EventLoop\LoopInterface;
 
 /**
- * Class Mysql5ConnectionTest.
+ * Class PostgreSQLConnectionPoolTest.
  */
-class Mysql5ConnectionTest extends ConnectionTest
+class PostgreSQLConnectionPoolTest extends ConnectionTest
 {
     /**
      * {@inheritdoc}
      */
     protected function getConnection(LoopInterface $loop): Connection
     {
-        $mysqlPlatform = new MySQLPlatform();
+        $postgreSQLPlatform = new PostgreSQLPlatform();
 
-        return SingleConnection::createConnected(new MysqlDriver(
-            $loop
-        ), new Credentials(
+        return ConnectionPool::createConnected(new PostgreSQLDriver($loop), new Credentials(
             '127.0.0.1',
-            '3306',
+            '5432',
             'root',
             'root',
-            'test'
-        ), $mysqlPlatform);
+            'test',
+            [], 10
+        ), $postgreSQLPlatform);
     }
 }

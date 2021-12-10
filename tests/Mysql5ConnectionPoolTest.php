@@ -17,15 +17,15 @@ namespace Drift\DBAL\Tests;
 
 use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Drift\DBAL\Connection;
+use Drift\DBAL\ConnectionPool;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\Mysql\MysqlDriver;
-use Drift\DBAL\SingleConnection;
 use React\EventLoop\LoopInterface;
 
 /**
- * Class Mysql5ConnectionTest.
+ * Class Mysql5ConnectionPoolTest.
  */
-class Mysql5ConnectionTest extends ConnectionTest
+class Mysql5ConnectionPoolTest extends ConnectionTest
 {
     /**
      * {@inheritdoc}
@@ -34,14 +34,15 @@ class Mysql5ConnectionTest extends ConnectionTest
     {
         $mysqlPlatform = new MySQLPlatform();
 
-        return SingleConnection::createConnected(new MysqlDriver(
+        return ConnectionPool::createConnected(new MysqlDriver(
             $loop
         ), new Credentials(
             '127.0.0.1',
             '3306',
             'root',
             'root',
-            'test'
+            'test',
+            [], 10
         ), $mysqlPlatform);
     }
 }
