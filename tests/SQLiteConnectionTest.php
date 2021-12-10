@@ -19,6 +19,7 @@ use Doctrine\DBAL\Platforms\SqlitePlatform;
 use Drift\DBAL\Connection;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\SQLite\SQLiteDriver;
+use Drift\DBAL\SingleConnection;
 use React\EventLoop\LoopInterface;
 
 /**
@@ -33,7 +34,7 @@ class SQLiteConnectionTest extends ConnectionTest
     {
         $mysqlPlatform = new SqlitePlatform();
 
-        return Connection::createConnected(new SQLiteDriver(
+        return SingleConnection::createConnected(new SQLiteDriver(
             $loop
         ), new Credentials(
             '',

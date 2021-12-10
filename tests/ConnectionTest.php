@@ -559,7 +559,10 @@ abstract class ConnectionTest extends TestCase
      */
     public function testAffectedRows()
     {
-        if ($this instanceof PostgreSQLConnectionTest) {
+        if (
+            $this instanceof PostgreSQLConnectionTest ||
+            $this instanceof PostgreSQLConnectionPoolTest
+        ) {
             $this->markTestSkipped('This feature is not implemented in the Postgres client');
         }
 

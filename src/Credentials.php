@@ -20,35 +20,13 @@ namespace Drift\DBAL;
  */
 class Credentials
 {
-    /**
-     * @var string
-     */
-    private $host;
-
-    /**
-     * @var string
-     */
-    private $port;
-
-    /**
-     * @var string
-     */
-    private $user;
-
-    /**
-     * @var string
-     */
-    private $password;
-
-    /**
-     * @var string
-     */
-    private $dbName;
-
-    /**
-     * @var array
-     */
-    private $options;
+    private string $host;
+    private string $port;
+    private string $user;
+    private string $password;
+    private string $dbName;
+    private array $options;
+    private int $connections;
 
     /**
      * Credentials constructor.
@@ -59,6 +37,7 @@ class Credentials
      * @param string $password
      * @param string $dbName
      * @param array  $options
+     * @param int    $connections
      */
     public function __construct(
         string $host,
@@ -66,7 +45,8 @@ class Credentials
         string $user,
         string $password,
         string $dbName,
-        array $options = []
+        array $options = [],
+        int $connections = 1
     ) {
         $this->host = $host;
         $this->port = $port;
@@ -74,6 +54,7 @@ class Credentials
         $this->password = $password;
         $this->dbName = $dbName;
         $this->options = $options;
+        $this->connections = $connections;
     }
 
     /**
@@ -122,6 +103,14 @@ class Credentials
     public function getOptions(): array
     {
         return $this->options;
+    }
+
+    /**
+     * @return int
+     */
+    public function getConnections(): int
+    {
+        return $this->connections;
     }
 
     /**

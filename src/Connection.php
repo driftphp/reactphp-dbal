@@ -23,37 +23,13 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Schema;
 use Drift\DBAL\Driver\Driver;
-use Drift\DBAL\Mock\MockedDBALConnection;
-use Drift\DBAL\Mock\MockedDriver;
-use function React\Promise\map;
 use React\Promise\PromiseInterface;
 
 /**
  * Class Connection.
  */
-class Connection
+interface Connection
 {
-    private Driver $driver;
-    private Credentials $credentials;
-    private AbstractPlatform $platform;
-
-    /**
-     * Connection constructor.
-     *
-     * @param Driver           $driver
-     * @param Credentials      $credentials
-     * @param AbstractPlatform $platform
-     */
-    private function __construct(
-        Driver $driver,
-        Credentials $credentials,
-        AbstractPlatform $platform
-    ) {
-        $this->driver = $driver;
-        $this->credentials = $credentials;
-        $this->platform = $platform;
-    }
-
     /**
      * Create new connection.
      *
@@ -67,9 +43,7 @@ class Connection
         Driver $driver,
         Credentials $credentials,
         AbstractPlatform $platform
-    ) {
-        return new self($driver, $credentials, $platform);
-    }
+    ): Connection;
 
     /**
      * Create new connection.
@@ -84,32 +58,22 @@ class Connection
         Driver $driver,
         Credentials $credentials,
         AbstractPlatform $platform
-    ) {
-        $connection = new self($driver, $credentials, $platform);
-        $connection->connect();
+    ): Connection;
 
-        return $connection;
-    }
+    /**
+     * @return string
+     */
+    public function getDriverNamespace(): string;
 
     /**
      * Connect.
      */
-    public function connect()
-    {
-        $this
-            ->driver
-            ->connect($this->credentials);
-    }
+    public function connect();
 
     /**
      * Close.
      */
-    public function close()
-    {
-        $this
-            ->driver
-            ->close();
-    }
+    public function close();
 
     /**
      * Creates QueryBuilder.
@@ -118,14 +82,7 @@ class Connection
      *
      * @throws DBALException
      */
-    public function createQueryBuilder(): QueryBuilder
-    {
-        return new QueryBuilder(
-            new MockedDBALConnection([
-                'platform' => $this->platform,
-            ], new MockedDriver())
-        );
-    }
+    public function createQueryBuilder(): QueryBuilder;
 
     /**
      * Query by query builder.
@@ -134,13 +91,7 @@ class Connection
      *
      * @return PromiseInterface<Result>
      */
-    public function query(QueryBuilder $queryBuilder): PromiseInterface
-    {
-        return $this->queryBySQL(
-            $queryBuilder->getSQL(),
-            $queryBuilder->getParameters()
-        );
-    }
+    public function query(QueryBuilder $queryBuilder): PromiseInterface;
 
     /**
      * Query by sql and parameters.
@@ -150,12 +101,7 @@ class Connection
      *
      * @return PromiseInterface<Result>
      */
-    public function queryBySQL(string $sql, array $parameters = []): PromiseInterface
-    {
-        return $this
-            ->driver
-            ->query($sql, $parameters);
-    }
+    public function queryBySQL(string $sql, array $parameters = []): PromiseInterface;
 
     /**
      * Execute, sequentially, an array of sqls.
@@ -164,16 +110,7 @@ class Connection
      *
      * @return PromiseInterface<Connection>
      */
-    public function executeSQLs(array $sqls): PromiseInterface
-    {
-        return
-            map($sqls, function (string $sql) {
-                return $this->queryBySQL($sql);
-            })
-            ->then(function () {
-                return $this;
-            });
-    }
+    public function executeSQLs(array $sqls): PromiseInterface;
 
     /**
      * Execute an schema.
@@ -182,14 +119,7 @@ class Connection
      *
      * @return PromiseInterface<Connection>
      */
-    public function executeSchema(Schema $schema): PromiseInterface
-    {
-        return $this
-            ->executeSQLs($schema->toSql($this->platform))
-            ->then(function () {
-                return $this;
-            });
-    }
+    public function executeSchema(Schema $schema): PromiseInterface;
 
     /**
      * Shortcuts.
@@ -208,13 +138,7 @@ class Connection
     public function findOneBy(
         string $table,
         array $where
-    ): PromiseInterface {
-        return $this
-            ->getResultByWhereClause($table, $where)
-            ->then(function (Result $result) {
-                return $result->fetchFirstRow();
-            });
-    }
+    ): PromiseInterface;
 
     /**
      * Find by.
@@ -229,13 +153,7 @@ class Connection
     public function findBy(
         string $table,
         array $where = []
-    ): PromiseInterface {
-        return $this
-            ->getResultByWhereClause($table, $where)
-            ->then(function (Result $result) {
-                return $result->fetchAllRows();
-            });
-    }
+    ): PromiseInterface;
 
     /**
      * @param string $table
@@ -246,11 +164,7 @@ class Connection
     public function insert(
         string $table,
         array $values
-    ): PromiseInterface {
-        $queryBuilder = $this->createQueryBuilder();
-
-        return $this->driver->insert($queryBuilder, $table, $values);
-    }
+    ): PromiseInterface;
 
     /**
      * @param string $table
@@ -263,19 +177,7 @@ class Connection
     public function delete(
         string $table,
         array $values
-    ): PromiseInterface {
-        if (empty($values)) {
-            throw InvalidArgumentException::fromEmptyCriteria();
-        }
-
-        $queryBuilder = $this
-            ->createQueryBuilder()
-            ->delete($table);
-
-        $this->applyWhereClausesFromArray($queryBuilder, $values);
-
-        return $this->query($queryBuilder);
-    }
+    ): PromiseInterface;
 
     /**
      * @param string $table
@@ -290,25 +192,7 @@ class Connection
         string $table,
         array $id,
         array $values
-    ): PromiseInterface {
-        if (empty($id)) {
-            throw InvalidArgumentException::fromEmptyCriteria();
-        }
-
-        $queryBuilder = $this
-            ->createQueryBuilder()
-            ->update($table);
-
-        $parameters = $queryBuilder->getParameters();
-        foreach ($values as $field => $value) {
-            $queryBuilder->set($field, '?');
-            $parameters[] = $value;
-        }
-        $queryBuilder->setParameters($parameters);
-        $this->applyWhereClausesFromArray($queryBuilder, $id);
-
-        return $this->query($queryBuilder);
-    }
+    ): PromiseInterface;
 
     /**
      * @param string $table
@@ -323,15 +207,7 @@ class Connection
         string $table,
         array $id,
         array $values
-    ) {
-        return $this
-            ->findOneBy($table, $id)
-            ->then(function (?array $result) use ($table, $id, $values) {
-                return is_null($result)
-                    ? $this->insert($table, array_merge($id, $values))
-                    : $this->update($table, $id, $values);
-            });
-    }
+    ): PromiseInterface;
 
     /**
      * Table related shortcuts.
@@ -359,38 +235,7 @@ class Connection
         array $fields,
         array $extra = [],
         bool $autoincrementId = false
-    ): PromiseInterface {
-        if (empty($fields)) {
-            throw InvalidArgumentException::fromEmptyCriteria();
-        }
-
-        $schema = new Schema();
-        $table = $schema->createTable($name);
-        foreach ($fields as $field => $type) {
-            $extraField = (
-                array_key_exists($field, $extra) &&
-                is_array($extra[$field])
-            ) ? $extra[$field] : [];
-
-            if (
-                'string' == $type &&
-                !array_key_exists('length', $extraField)
-            ) {
-                $extraField = array_merge(
-                    $extraField,
-                    ['length' => 255]
-                );
-            }
-
-            $table->addColumn($field, $type, $extraField);
-        }
-
-        $id = array_key_first($fields);
-        $table->setPrimaryKey([$id]);
-        $table->getColumn($id)->setAutoincrement($autoincrementId);
-
-        return $this->executeSchema($schema);
-    }
+    ): PromiseInterface;
 
     /**
      * @param string $name
@@ -399,14 +244,7 @@ class Connection
      *
      * @throws TableNotFoundException
      */
-    public function dropTable(string $name): PromiseInterface
-    {
-        return $this
-            ->queryBySQL("DROP TABLE $name")
-            ->then(function () {
-                return $this;
-            });
-    }
+    public function dropTable(string $name): PromiseInterface;
 
     /**
      * @param string $name
@@ -415,79 +253,5 @@ class Connection
      *
      * @throws TableNotFoundException
      */
-    public function truncateTable(string $name): PromiseInterface
-    {
-        $truncateTableQuery = $this
-            ->platform
-            ->getTruncateTableSQL($name);
-
-        return $this
-            ->queryBySQL($truncateTableQuery)
-            ->then(function () {
-                return $this;
-            });
-    }
-
-    /**
-     * Get result by where clause.
-     *
-     * @param string $table
-     * @param array  $where
-     *
-     * @return PromiseInterface<Result>
-     */
-    private function getResultByWhereClause(
-        string $table,
-        array $where
-    ): PromiseInterface {
-        $queryBuilder = $this
-            ->createQueryBuilder()
-            ->select('t.*')
-            ->from($table, 't');
-
-        $this->applyWhereClausesFromArray($queryBuilder, $where);
-
-        return $this->query($queryBuilder);
-    }
-
-    /**
-     * Apply where clauses.
-     *
-     * [
-     *      "id" => 1,
-     *      "name" => "Marc"
-     * ]
-     *
-     * to
-     *
-     * [
-     *      [ "id = ?", "name = ?"],
-     *      [1, "Marc"]
-     * ]
-     *
-     * @param QueryBuilder $queryBuilder
-     * @param array        $array
-     */
-    private function applyWhereClausesFromArray(
-        QueryBuilder $queryBuilder,
-        array $array
-    ) {
-        $params = $queryBuilder->getParameters();
-        foreach ($array as $field => $value) {
-            if (\is_null($value)) {
-                $queryBuilder->andWhere(
-                    $queryBuilder->expr()->isNull($field)
-                );
-                continue;
-            }
-
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq($field, '?')
-            );
-
-            $params[] = $value;
-        }
-
-        $queryBuilder->setParameters($params);
-    }
+    public function truncateTable(string $name): PromiseInterface;
 }
