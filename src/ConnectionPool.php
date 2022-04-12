@@ -28,7 +28,7 @@ use React\Promise\PromiseInterface;
 /**
  * Class ConnectionPool.
  */
-class ConnectionPool implements Connection
+class ConnectionPool implements Connection, ConnectionPoolInterface
 {
     private array $connections;
 
@@ -420,5 +420,15 @@ class ConnectionPool implements Connection
         return $this->executeInBestConnection(function (Connection $connection) use ($name) {
             return $connection->truncateTable($name);
         });
+    }
+
+    /**
+     * Get the Pool's connection workers
+     *
+     * @return ConnectionWorker[]
+     */
+    public function getWorkers(): array
+    {
+        return $this->connections;
     }
 }
