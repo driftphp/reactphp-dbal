@@ -25,6 +25,8 @@ use Doctrine\DBAL\Schema\Schema;
 use Drift\DBAL\Driver\Driver;
 use Drift\DBAL\Mock\MockedDBALConnection;
 use Drift\DBAL\Mock\MockedDriver;
+use React\EventLoop\Loop;
+use React\EventLoop\TimerInterface;
 use function React\Promise\map;
 use React\Promise\PromiseInterface;
 
@@ -33,6 +35,7 @@ class SingleConnection implements Connection
     private Driver $driver;
     private Credentials $credentials;
     private AbstractPlatform $platform;
+    private ?TimerInterface $keepAliveTimer = null;
 
     /**
      * Connection constructor.
@@ -51,19 +54,28 @@ class SingleConnection implements Connection
         $this->platform = $platform;
     }
 
+    public function __destruct()
+    {
+        if ($this->keepAliveTimer != null) {
+            Loop::get()->cancelTimer($this->keepAliveTimer);
+        }
+    }
+
     /**
      * Create new connection.
      *
-     * @param Driver           $driver
-     * @param Credentials      $credentials
+     * @param Driver $driver
+     * @param Credentials $credentials
      * @param AbstractPlatform $platform
+     * @param ConnectionOptions|null $options
      *
      * @return Connection
      */
     public static function create(
         Driver $driver,
         Credentials $credentials,
-        AbstractPlatform $platform
+        AbstractPlatform $platform,
+        ?ConnectionOptions $options = null
     ): Connection {
         return new self($driver, $credentials, $platform);
     }
@@ -71,19 +83,21 @@ class SingleConnection implements Connection
     /**
      * Create new connection.
      *
-     * @param Driver           $driver
-     * @param Credentials      $credentials
+     * @param Driver $driver
+     * @param Credentials $credentials
      * @param AbstractPlatform $platform
+     * @param ConnectionOptions|null $options
      *
      * @return Connection
      */
     public static function createConnected(
         Driver $driver,
         Credentials $credentials,
-        AbstractPlatform $platform
+        AbstractPlatform $platform,
+        ?ConnectionOptions $options = null
     ): Connection {
         $connection = self::create($driver, $credentials, $platform);
-        $connection->connect();
+        $connection->connect($options);
 
         return $connection;
     }
@@ -99,11 +113,21 @@ class SingleConnection implements Connection
     /**
      * Connect.
      */
-    public function connect()
+    public function connect(?ConnectionOptions $options = null)
     {
         $this
             ->driver
             ->connect($this->credentials);
+
+        if ($options != null && $options->getKeepAliveIntervalSec() > 0) {
+            $this->keepAliveTimer = Loop::get()->addPeriodicTimer($options->getKeepAliveIntervalSec(), function() {
+                $qb = $this->createQueryBuilder();
+                $this->query(
+                    $qb
+                        ->select('1')
+                );
+            });
+        }
     }
 
     /**
@@ -111,6 +135,11 @@ class SingleConnection implements Connection
      */
     public function close()
     {
+        if ($this->keepAliveTimer != null) {
+            Loop::get()->cancelTimer($this->keepAliveTimer);
+            $this->keepAliveTimer = null;
+        }
+
         $this
             ->driver
             ->close();

@@ -18,6 +18,7 @@ namespace Drift\DBAL\Tests;
 use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Drift\DBAL\Connection;
 use Drift\DBAL\ConnectionPool;
+use Drift\DBAL\ConnectionPoolOptions;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\Mysql\MysqlDriver;
 use React\EventLoop\LoopInterface;
@@ -41,8 +42,7 @@ class Mysql5ConnectionPoolTest extends ConnectionTest
             '3306',
             'root',
             'root',
-            'test',
-            [], 10
-        ), $mysqlPlatform);
+            'test'
+        ), $mysqlPlatform, new ConnectionPoolOptions(10));
     }
 }
