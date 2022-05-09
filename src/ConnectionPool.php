@@ -104,7 +104,7 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
         ?ConnectionOptions $options = null
     ): Connection {
         $connection = self::create($driver, $credentials, $platform, $options);
-        $connection->connect();
+        $connection->connect($options);
 
         return $connection;
     }
