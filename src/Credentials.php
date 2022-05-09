@@ -25,8 +25,6 @@ class Credentials
     private string $user;
     private string $password;
     private string $dbName;
-    private array $options;
-    private int $connections;
 
     /**
      * Credentials constructor.
@@ -36,25 +34,19 @@ class Credentials
      * @param string $user
      * @param string $password
      * @param string $dbName
-     * @param array  $options
-     * @param int    $connections
      */
     public function __construct(
         string $host,
         string $port,
         string $user,
         string $password,
-        string $dbName,
-        array $options = [],
-        int $connections = 1
+        string $dbName
     ) {
         $this->host = $host;
         $this->port = $port;
         $this->user = $user;
         $this->password = $password;
         $this->dbName = $dbName;
-        $this->options = $options;
-        $this->connections = $connections;
     }
 
     /**
@@ -95,22 +87,6 @@ class Credentials
     public function getDbName(): string
     {
         return $this->dbName;
-    }
-
-    /**
-     * @return array
-     */
-    public function getOptions(): array
-    {
-        return $this->options;
-    }
-
-    /**
-     * @return int
-     */
-    public function getConnections(): int
-    {
-        return $this->connections;
     }
 
     /**
