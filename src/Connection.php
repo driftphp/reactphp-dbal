@@ -33,9 +33,9 @@ interface Connection
     /**
      * Create new connection.
      *
-     * @param Driver $driver
-     * @param Credentials $credentials
-     * @param AbstractPlatform $platform
+     * @param Driver                 $driver
+     * @param Credentials            $credentials
+     * @param AbstractPlatform       $platform
      * @param ConnectionOptions|null $options
      *
      * @return Connection
@@ -50,9 +50,9 @@ interface Connection
     /**
      * Create new connection.
      *
-     * @param Driver $driver
-     * @param Credentials $credentials
-     * @param AbstractPlatform $platform
+     * @param Driver                 $driver
+     * @param Credentials            $credentials
+     * @param AbstractPlatform       $platform
      * @param ConnectionOptions|null $options
      *
      * @return Connection
