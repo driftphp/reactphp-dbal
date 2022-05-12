@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace Drift\DBAL\Driver\Mysql;
 
 use Doctrine\DBAL\Driver\AbstractMySQLDriver;
+use Doctrine\DBAL\Driver\Connection as DriverConnection;
 use Exception;
 
 /**
@@ -26,7 +27,7 @@ final class EmptyDoctrineMysqlDriver extends AbstractMySQLDriver
     /**
      * {@inheritdoc}
      */
-    public function connect(array $params, $username = null, $password = null, array $driverOptions = [])
+    public function connect(array $params, $username = null, $password = null, array $driverOptions = []): DriverConnection
     {
         throw new Exception('Do not use this method.');
     }
