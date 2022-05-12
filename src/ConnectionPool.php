@@ -58,7 +58,8 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
         AbstractPlatform $platform,
         ?ConnectionOptions $options = null
     ): Connection {
-        $numberOfConnections = ConnectionPoolOptions::DEFAULT_NUMBER_OF_CONNECTIONS;
+        $numberOfConnections = $credentials->getConnections() ??
+            ConnectionPoolOptions::DEFAULT_NUMBER_OF_CONNECTIONS;
         if ($options instanceof ConnectionPoolOptions) {
             $numberOfConnections = $options->getNumberOfConnections();
         }

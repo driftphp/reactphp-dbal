@@ -27,6 +27,18 @@ class Credentials
     private string $dbName;
 
     /**
+     * @deprecated
+     * @var array options
+     */
+    private array $options;
+
+    /**
+     * @deprecated
+     * @var int|null $connections
+     */
+    private ?int $connections = null;
+
+    /**
      * Credentials constructor.
      *
      * @param string $host
@@ -47,6 +59,23 @@ class Credentials
         $this->user = $user;
         $this->password = $password;
         $this->dbName = $dbName;
+
+        if (func_num_args() > 5) {
+            trigger_error(
+                '6th argument is deprecated, for options please use ' . ConnectionOptions::class  .
+                ' or and extend of this class instead, when creating a connection',
+                E_USER_DEPRECATED
+            );
+            $this->options = (array)func_get_arg(5);
+        }
+        if (func_num_args() > 6) {
+            trigger_error(
+                '7th argument is deprecated, please use ' . ConnectionPoolOptions::class  .
+                ' to set the number of connections, when creating a ' . ConnectionPool::class,
+                E_USER_DEPRECATED
+            );
+            $this->connections = (int)func_get_arg(6);
+        }
     }
 
     /**
@@ -87,6 +116,24 @@ class Credentials
     public function getDbName(): string
     {
         return $this->dbName;
+    }
+
+    /**
+     * @deprecated
+     * @return array
+     */
+    public function getOptions(): array
+    {
+        return $this->options;
+    }
+
+    /**
+     * @deprecated
+     * @return int|null
+     */
+    public function getConnections(): ?int
+    {
+        return $this->connections;
     }
 
     /**
