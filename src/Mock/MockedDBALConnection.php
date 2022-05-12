@@ -52,8 +52,10 @@ class MockedDBALConnection extends Connection
 
     /**
      * {@inheritdoc}
+     *
+     * @return mixed
      */
-    public function quote($input, $type = ParameterType::STRING)
+    public function quote($input, $type = ParameterType::STRING)/*: mixed // <--- from php 8*/
     {
         throw new Exception('Mocked method. Unable to be used');
     }
@@ -70,8 +72,10 @@ class MockedDBALConnection extends Connection
 
     /**
      * {@inheritdoc}
+     *
+     * @return string|int|false A string representation of the last inserted ID.
      */
-    public function lastInsertId($name = null)
+    public function lastInsertId($name = null)/*: string|int|false // <--- from php 8 */
     {
         throw new Exception('Mocked method. Unable to be used');
     }
@@ -79,7 +83,7 @@ class MockedDBALConnection extends Connection
     /**
      * {@inheritdoc}
      */
-    public function beginTransaction()
+    public function beginTransaction(): bool
     {
         throw new Exception('Mocked method. Unable to be used');
     }
@@ -87,7 +91,7 @@ class MockedDBALConnection extends Connection
     /**
      * {@inheritdoc}
      */
-    public function commit()
+    public function commit(): bool
     {
         throw new Exception('Mocked method. Unable to be used');
     }
@@ -95,7 +99,7 @@ class MockedDBALConnection extends Connection
     /**
      * {@inheritdoc}
      */
-    public function rollBack()
+    public function rollBack(): bool
     {
         throw new Exception('Mocked method. Unable to be used');
     }
