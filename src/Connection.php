@@ -33,31 +33,35 @@ interface Connection
     /**
      * Create new connection.
      *
-     * @param Driver           $driver
-     * @param Credentials      $credentials
-     * @param AbstractPlatform $platform
+     * @param Driver                 $driver
+     * @param Credentials            $credentials
+     * @param AbstractPlatform       $platform
+     * @param ConnectionOptions|null $options
      *
      * @return Connection
      */
     public static function create(
         Driver $driver,
         Credentials $credentials,
-        AbstractPlatform $platform
+        AbstractPlatform $platform,
+        ?ConnectionOptions $options = null
     ): Connection;
 
     /**
      * Create new connection.
      *
-     * @param Driver           $driver
-     * @param Credentials      $credentials
-     * @param AbstractPlatform $platform
+     * @param Driver                 $driver
+     * @param Credentials            $credentials
+     * @param AbstractPlatform       $platform
+     * @param ConnectionOptions|null $options
      *
      * @return Connection
      */
     public static function createConnected(
         Driver $driver,
         Credentials $credentials,
-        AbstractPlatform $platform
+        AbstractPlatform $platform,
+        ?ConnectionOptions $options = null
     ): Connection;
 
     /**
@@ -67,8 +71,10 @@ interface Connection
 
     /**
      * Connect.
+     *
+     * @param ConnectionOptions|null $options
      */
-    public function connect();
+    public function connect(?ConnectionOptions $options = null);
 
     /**
      * Close.

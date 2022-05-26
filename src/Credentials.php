@@ -25,8 +25,18 @@ class Credentials
     private string $user;
     private string $password;
     private string $dbName;
+
+    /**
+     * @deprecated
+     * @var array options
+     */
     private array $options;
-    private int $connections;
+
+    /**
+     * @deprecated
+     * @var int|null $connections
+     */
+    private ?int $connections = null;
 
     /**
      * Credentials constructor.
@@ -36,25 +46,36 @@ class Credentials
      * @param string $user
      * @param string $password
      * @param string $dbName
-     * @param array  $options
-     * @param int    $connections
      */
     public function __construct(
         string $host,
         string $port,
         string $user,
         string $password,
-        string $dbName,
-        array $options = [],
-        int $connections = 1
+        string $dbName
     ) {
         $this->host = $host;
         $this->port = $port;
         $this->user = $user;
         $this->password = $password;
         $this->dbName = $dbName;
-        $this->options = $options;
-        $this->connections = $connections;
+
+        if (func_num_args() > 5) {
+            trigger_error(
+                '6th argument is deprecated, for options please use ' . ConnectionOptions::class  .
+                ' or and extend of this class instead, when creating a connection',
+                E_USER_DEPRECATED
+            );
+            $this->options = (array)func_get_arg(5);
+        }
+        if (func_num_args() > 6) {
+            trigger_error(
+                '7th argument is deprecated, please use ' . ConnectionPoolOptions::class  .
+                ' to set the number of connections, when creating a ' . ConnectionPool::class,
+                E_USER_DEPRECATED
+            );
+            $this->connections = (int)func_get_arg(6);
+        }
     }
 
     /**
@@ -98,6 +119,7 @@ class Credentials
     }
 
     /**
+     * @deprecated
      * @return array
      */
     public function getOptions(): array
@@ -106,9 +128,10 @@ class Credentials
     }
 
     /**
-     * @return int
+     * @deprecated
+     * @return int|null
      */
-    public function getConnections(): int
+    public function getConnections(): ?int
     {
         return $this->connections;
     }

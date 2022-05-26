@@ -45,23 +45,31 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
     /**
      * Create new connection.
      *
-     * @param Driver           $driver
-     * @param Credentials      $credentials
-     * @param AbstractPlatform $platform
+     * @param Driver                 $driver
+     * @param Credentials            $credentials
+     * @param AbstractPlatform       $platform
+     * @param ConnectionOptions|null $options
      *
      * @return Connection
      */
     public static function create(
         Driver $driver,
         Credentials $credentials,
-        AbstractPlatform $platform
+        AbstractPlatform $platform,
+        ?ConnectionOptions $options = null
     ): Connection {
-        $numberOfConnections = $credentials->getConnections();
+        $numberOfConnections = $credentials->getConnections() ??
+            ConnectionPoolOptions::DEFAULT_NUMBER_OF_CONNECTIONS;
+        if ($options instanceof ConnectionPoolOptions) {
+            $numberOfConnections = $options->getNumberOfConnections();
+        }
+
         if ($numberOfConnections <= 1) {
             return SingleConnection::create(
                 $driver,
                 $credentials,
-                $platform
+                $platform,
+                $options
             );
         }
 
@@ -71,7 +79,8 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
                 SingleConnection::create(
                     clone $driver,
                     $credentials,
-                    $platform
+                    $platform,
+                    $options
                 ), $i
             );
         }
@@ -82,19 +91,21 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
     /**
      * Create new connection.
      *
-     * @param Driver           $driver
-     * @param Credentials      $credentials
-     * @param AbstractPlatform $platform
+     * @param Driver                 $driver
+     * @param Credentials            $credentials
+     * @param AbstractPlatform       $platform
+     * @param ConnectionOptions|null $options
      *
      * @return Connection
      */
     public static function createConnected(
         Driver $driver,
         Credentials $credentials,
-        AbstractPlatform $platform
+        AbstractPlatform $platform,
+        ?ConnectionOptions $options = null
     ): Connection {
-        $connection = self::create($driver, $credentials, $platform);
-        $connection->connect();
+        $connection = self::create($driver, $credentials, $platform, $options);
+        $connection->connect($options);
 
         return $connection;
     }
@@ -161,10 +172,10 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
     /**
      * Connect.
      */
-    public function connect()
+    public function connect(?ConnectionOptions $options = null)
     {
         foreach ($this->connections as $connection) {
-            $connection->getConnection()->connect();
+            $connection->getConnection()->connect($options);
         }
     }
 

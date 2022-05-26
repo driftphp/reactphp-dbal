@@ -17,6 +17,7 @@ namespace Drift\DBAL\Tests;
 
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Drift\DBAL\Connection;
+use Drift\DBAL\ConnectionPoolOptions;
 use Drift\DBAL\Credentials;
 use Drift\DBAL\Driver\PostgreSQL\PostgreSQLDriver;
 use Drift\DBAL\SingleConnection;
@@ -40,6 +41,6 @@ class PostgreSQLConnectionTest extends ConnectionTest
             'root',
             'root',
             'test'
-        ), $postgreSQLPlatform);
+        ), $postgreSQLPlatform, new ConnectionPoolOptions(10));
     }
 }
