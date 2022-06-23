@@ -9,5 +9,5 @@ interface ConnectionPoolInterface
      *
      * @return ConnectionWorker[]
      */
-    public function getWorkers(): array;
+    public function getConnections(): array;
 }

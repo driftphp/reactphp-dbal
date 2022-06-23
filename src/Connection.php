@@ -65,9 +65,9 @@ interface Connection
     ): Connection;
 
     /**
-     * @return string
+     * @return PromiseInterface<string>
      */
-    public function getDriverNamespace(): string;
+    public function getDriverNamespace(): PromiseInterface;
 
     /**
      * Connect.
@@ -260,4 +260,13 @@ interface Connection
      * @throws TableNotFoundException
      */
     public function truncateTable(string $name): PromiseInterface;
+
+    /**
+     * @return \React\Promise\PromiseInterface<\Drift\DBAL\SingleConnection>
+     */
+    public function startTransaction(): PromiseInterface;
+
+    public function commitTransaction(SingleConnection $connection): PromiseInterface;
+
+    public function rollbackTransaction(SingleConnection $connection): PromiseInterface;
 }
