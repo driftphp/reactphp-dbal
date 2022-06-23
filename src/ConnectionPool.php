@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Drift\DBAL;
 
+use Closure;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Exception\InvalidArgumentException;
 use Doctrine\DBAL\Exception\TableExistsException;
@@ -23,31 +24,51 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Schema\Schema;
 use Drift\DBAL\Driver\Driver;
+use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
+use RuntimeException;
+use SplObjectStorage;
+
+use function React\Promise\resolve;
 
 /**
  * Class ConnectionPool.
  */
 class ConnectionPool implements Connection, ConnectionPoolInterface
 {
-    private array $connections;
+
+    /**
+     * @var SplObjectStorage|array<\Drift\DBAL\Connection, \Drift\DBAL\ConnectionWorker> $connections
+     */
+    private SplObjectStorage $connections;
+
+    /**
+     * @var SplObjectStorage|Deferred[] $deferreds
+     */
+    private SplObjectStorage $deferreds;
 
     /**
      * Connection constructor.
      *
-     * @param ConnectionWorker[] $connections
+     * @param ConnectionWorker[] $workers
      */
-    private function __construct(array $connections)
+    private function __construct(array $workers)
     {
-        $this->connections = $connections;
+        $this->connections = new SplObjectStorage;
+
+        foreach ($workers as $worker) {
+            $this->connections->attach($worker->getConnection(), $worker);
+        }
+
+        $this->deferreds = new SplObjectStorage;
     }
 
     /**
      * Create new connection.
      *
-     * @param Driver                 $driver
-     * @param Credentials            $credentials
-     * @param AbstractPlatform       $platform
+     * @param Driver $driver
+     * @param Credentials $credentials
+     * @param AbstractPlatform $platform
      * @param ConnectionOptions|null $options
      *
      * @return Connection
@@ -73,9 +94,9 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
             );
         }
 
-        $connections = [];
+        $workers = [];
         for ($i = 0; $i < $numberOfConnections; ++$i) {
-            $connections[] = new ConnectionWorker(
+            $workers[] = new ConnectionWorker(
                 SingleConnection::create(
                     clone $driver,
                     $credentials,
@@ -85,15 +106,15 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
             );
         }
 
-        return new self($connections);
+        return new self($workers);
     }
 
     /**
      * Create new connection.
      *
-     * @param Driver                 $driver
-     * @param Credentials            $credentials
-     * @param AbstractPlatform       $platform
+     * @param Driver $driver
+     * @param Credentials $credentials
+     * @param AbstractPlatform $platform
      * @param ConnectionOptions|null $options
      *
      * @return Connection
@@ -111,45 +132,53 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
     }
 
     /**
-     * @return string
+     * @return PromiseInterface<string>
      */
-    public function getDriverNamespace(): string
+    public function getDriverNamespace(): PromiseInterface
     {
-        return $this
-            ->bestConnection()
-            ->getConnection()
-            ->getDriverNamespace();
+        return $this->bestConnectionWorker()
+            ->then(function (ConnectionWorker $worker) {
+                return $worker->getConnection()->getDriverNamespace();
+            });
     }
 
     /**
      * @param bool $increaseJobs
      *
-     * @return ConnectionWorker
+     * @return PromiseInterface<ConnectionWorker>
      */
-    private function bestConnection(bool $increaseJobs = false): ConnectionWorker
-    {
+    private function bestConnectionWorker(
+        bool $increaseJobs = false
+    ): PromiseInterface {
         $minJobs = 1000000000;
-        $minJobsConnection = null;
-        foreach ($this->connections as $i => $connection) {
-            if ($connection->getJobs() < $minJobs) {
-                $minJobs = $connection->getJobs();
-                $minJobsConnection = $i;
+        $bestConnection = null;
+
+        foreach ($this->connections as $connection) {
+            $worker = $this->connections->getInfo();
+            if ($worker->getJobs() < $minJobs && !$worker->isLeased()) {
+                $minJobs = $worker->getJobs();
+                $bestConnection = $worker;
             }
         }
 
-        if ($increaseJobs) {
-            $this->connections[$minJobsConnection]->startJob();
+        if ($bestConnection !== null) {
+            if ($increaseJobs) {
+                $bestConnection->startJob();
+            }
+
+            return resolve($bestConnection);
         }
 
-        return $this->connections[$minJobsConnection];
-    }
+        fwrite(STDOUT, 'no more workers' . PHP_EOL);
 
-    /**
-     * @return ConnectionWorker
-     */
-    private function firstConnection(): ConnectionWorker
-    {
-        return $this->connections[0];
+        $deferred = new Deferred;
+        $this->deferreds->attach($deferred);
+
+        if ($increaseJobs) {
+            $deferred->promise()->then(fn(ConnectionWorker $w) => $w->startJob());
+        }
+
+        return $deferred->promise();
     }
 
     /**
@@ -159,12 +188,15 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
      */
     private function executeInBestConnection(callable $callable): PromiseInterface
     {
-        $connectionWorker = $this->bestConnection(true);
+        $worker = null;
 
-        return $callable($connectionWorker->getConnection())
-            ->then(function ($whatever) use ($connectionWorker) {
-                $connectionWorker->stopJob();
-
+        return $this->bestConnectionWorker(true)
+            ->then(function (ConnectionWorker $connectionWorker) use ($callable, &$worker) {
+                $worker = $connectionWorker;
+                return $callable($worker->getConnection());
+            })
+            ->then(function ($whatever) use (&$worker) {
+                $worker->stopJob();
                 return $whatever;
             });
     }
@@ -175,7 +207,7 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
     public function connect(?ConnectionOptions $options = null)
     {
         foreach ($this->connections as $connection) {
-            $connection->getConnection()->connect($options);
+            $connection->connect($options);
         }
     }
 
@@ -185,7 +217,7 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
     public function close()
     {
         foreach ($this->connections as $connection) {
-            $connection->getConnection()->close();
+            $connection->close();
         }
     }
 
@@ -198,8 +230,13 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
      */
     public function createQueryBuilder(): QueryBuilder
     {
-        return $this
-            ->firstConnection()
+        // We clone the worker storage because we probably can't rely on
+        // SplObjectStorage::current(...) working reliably in an
+        // asynchronous environment.
+        $workers = clone $this->connections;
+        $workers->rewind();
+
+        return $workers->current()
             ->getConnection()
             ->createQueryBuilder();
     }
@@ -222,7 +259,7 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
      * Query by sql and parameters.
      *
      * @param string $sql
-     * @param array  $parameters
+     * @param array $parameters
      *
      * @return PromiseInterface<Result>
      */
@@ -271,7 +308,7 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
      * connection->findOneById('table', ['id' => 1]);
      *
      * @param string $table
-     * @param array  $where
+     * @param array $where
      *
      * @return PromiseInterface<array|null>
      */
@@ -290,7 +327,7 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
      * connection->findBy('table', ['id' => 1]);
      *
      * @param string $table
-     * @param array  $where
+     * @param array $where
      *
      * @return PromiseInterface<array>
      */
@@ -305,7 +342,7 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
 
     /**
      * @param string $table
-     * @param array  $values
+     * @param array $values
      *
      * @return PromiseInterface
      */
@@ -320,7 +357,7 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
 
     /**
      * @param string $table
-     * @param array  $values
+     * @param array $values
      *
      * @return PromiseInterface
      *
@@ -337,8 +374,8 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
 
     /**
      * @param string $table
-     * @param array  $id
-     * @param array  $values
+     * @param array $id
+     * @param array $values
      *
      * @return PromiseInterface
      *
@@ -356,8 +393,8 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
 
     /**
      * @param string $table
-     * @param array  $id
-     * @param array  $values
+     * @param array $id
+     * @param array $values
      *
      * @return PromiseInterface
      *
@@ -385,9 +422,9 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
      * First field is considered as primary key.
      *
      * @param string $name
-     * @param array  $fields
-     * @param array  $extra
-     * @param bool   $autoincrementId
+     * @param array $fields
+     * @param array $extra
+     * @param bool $autoincrementId
      *
      * @return PromiseInterface<Connection>
      *
@@ -400,7 +437,12 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
         array $extra = [],
         bool $autoincrementId = false
     ): PromiseInterface {
-        return $this->executeInBestConnection(function (Connection $connection) use ($name, $fields, $extra, $autoincrementId) {
+        return $this->executeInBestConnection(function (Connection $connection) use (
+            $name,
+            $fields,
+            $extra,
+            $autoincrementId
+        ) {
             return $connection->createTable($name, $fields, $extra, $autoincrementId);
         });
     }
@@ -438,8 +480,55 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
      *
      * @return ConnectionWorker[]
      */
-    public function getWorkers(): array
+    public function getConnections(): array
     {
         return $this->connections;
     }
+
+    public function startTransaction(): PromiseInterface
+    {
+        return $this->bestConnectionWorker()
+            ->then(function (ConnectionWorker $worker) {
+                $worker->setLeased(true);
+
+                $connection = $worker->getConnection();
+
+                if (!$connection instanceof SingleConnection) {
+                    throw new RuntimeException('connection must be instance of ' . SingleConnection::class);
+                }
+
+                $connection->startTransaction();
+
+                return resolve($connection);
+            });
+    }
+
+    public function commitTransaction(SingleConnection $connection): PromiseInterface
+    {
+        return $connection->commitTransaction($connection)
+            ->then(Closure::fromCallable([$this, 'releaseConnection']));
+    }
+
+    public function rollbackTransaction(SingleConnection $connection): PromiseInterface
+    {
+        return $connection->rollbackTransaction($connection)
+            ->always(Closure::fromCallable([$this, 'releaseConnection']));
+    }
+
+    private function releaseConnection(SingleConnection $connection): PromiseInterface
+    {
+        if (count($this->deferreds) === 0) {
+            /** @var \Drift\DBAL\ConnectionWorker $worker */
+            $worker = $this->connections[$connection];
+            $worker->setLeased(false);
+            return resolve();
+        }
+
+        $deferred = $this->deferreds->current();
+        $this->deferreds->detach($deferred);
+
+        $deferred->resolve($this->connections[$connection]);
+        return resolve();
+    }
+
 }

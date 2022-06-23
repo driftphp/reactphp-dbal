@@ -23,6 +23,7 @@ class ConnectionWorker
     private Connection $connection;
     private int $id;
     private int $jobs;
+    private bool $leased = false;
 
     /**
      * @param Connection $connection
@@ -68,4 +69,16 @@ class ConnectionWorker
     {
         return $this->jobs;
     }
+
+    public function isLeased(): bool
+    {
+        return $this->leased;
+    }
+
+    public function setLeased(bool $leased): ConnectionWorker
+    {
+        $this->leased = $leased;
+        return $this;
+    }
+
 }

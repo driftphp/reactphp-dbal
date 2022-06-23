@@ -29,6 +29,7 @@ use React\EventLoop\Loop;
 use React\EventLoop\TimerInterface;
 use function React\Promise\map;
 use React\Promise\PromiseInterface;
+use function React\Promise\resolve;
 
 class SingleConnection implements Connection
 {
@@ -103,11 +104,11 @@ class SingleConnection implements Connection
     }
 
     /**
-     * @return string
+     * @return PromiseInterface<string>
      */
-    public function getDriverNamespace(): string
+    public function getDriverNamespace(): PromiseInterface
     {
-        return get_class($this->driver);
+        return resolve(get_class($this->driver));
     }
 
     /**
@@ -523,5 +524,23 @@ class SingleConnection implements Connection
         }
 
         $queryBuilder->setParameters($params);
+    }
+
+    public function startTransaction(): PromiseInterface
+    {
+        return $this->queryBySQL('START TRANSACTION')
+            ->then(fn(...$args) => resolve($this));
+    }
+
+    public function commitTransaction(SingleConnection $connection): PromiseInterface
+    {
+        return $connection->queryBySQL('COMMIT')
+            ->then(fn(...$args) => resolve($this));
+    }
+
+    public function rollbackTransaction(SingleConnection $connection): PromiseInterface
+    {
+        return $connection->queryBySQL('ROLLBACK')
+            ->then(fn(...$args) => resolve($this));
     }
 }
