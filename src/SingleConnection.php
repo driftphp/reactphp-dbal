@@ -529,18 +529,18 @@ class SingleConnection implements Connection
     public function startTransaction(): PromiseInterface
     {
         return $this->queryBySQL('START TRANSACTION')
-            ->then(fn(...$args) => resolve($this));
+            ->then(fn(...$args) => $this);
     }
 
     public function commitTransaction(SingleConnection $connection): PromiseInterface
     {
         return $connection->queryBySQL('COMMIT')
-            ->then(fn(...$args) => resolve($this));
+            ->then(fn(...$args) => $this);
     }
 
     public function rollbackTransaction(SingleConnection $connection): PromiseInterface
     {
         return $connection->queryBySQL('ROLLBACK')
-            ->then(fn(...$args) => resolve($this));
+            ->then(fn(...$args) => $this);
     }
 }
