@@ -104,11 +104,11 @@ class SingleConnection implements Connection
     }
 
     /**
-     * @return PromiseInterface<string>
+     * @return string
      */
-    public function getDriverNamespace(): PromiseInterface
+    public function getDriverNamespace(): string
     {
-        return resolve(get_class($this->driver));
+        return get_class($this->driver);
     }
 
     /**

@@ -65,9 +65,9 @@ interface Connection
     ): Connection;
 
     /**
-     * @return PromiseInterface<string>
+     * @return string
      */
-    public function getDriverNamespace(): PromiseInterface;
+    public function getDriverNamespace(): string;
 
     /**
      * Connect.
