@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Drift\DBAL;
 
+use ArrayObject;
 use Closure;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Exception\InvalidArgumentException;
@@ -132,14 +133,13 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
     }
 
     /**
-     * @return PromiseInterface<string>
+     * @return string
      */
-    public function getDriverNamespace(): PromiseInterface
+    public function getDriverNamespace(): string
     {
-        return $this->bestConnectionWorker()
-            ->then(function (ConnectionWorker $worker) {
-                return $worker->getConnection()->getDriverNamespace();
-            });
+        $connections = clone $this->connections;
+        $worker = $connections->current();
+        return $worker->getDriverNamespace();
     }
 
     /**
@@ -482,7 +482,14 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
      */
     public function getConnections(): array
     {
-        return $this->connections;
+        $workers = [];
+
+        $connections = clone $this->connections;
+        foreach ($connections as $connection) {
+            $workers[] = $connections->getInfo();
+        }
+
+        return $workers;
     }
 
     public function startTransaction(): PromiseInterface
