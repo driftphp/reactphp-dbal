@@ -90,4 +90,19 @@ class SQLiteDriver extends AbstractDriver
     {
         $this->database->close();
     }
+
+    public function startTransaction(): PromiseInterface
+    {
+        return $this->query('BEGIN TRANSACTION', []);
+    }
+
+    public function commitTransaction(): PromiseInterface
+    {
+        return $this->query('COMMIT', []);
+    }
+
+    public function rollbackTransaction(): PromiseInterface
+    {
+        return $this->query('ROLLBACK', []);
+    }
 }

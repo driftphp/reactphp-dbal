@@ -94,4 +94,20 @@ class MysqlDriver extends AbstractDriver
     {
         $this->connection->close();
     }
+
+    public function startTransaction(): PromiseInterface
+    {
+        return $this->query('START TRANSACTION', []);
+    }
+
+    public function commitTransaction(): PromiseInterface
+    {
+        return $this->query('COMMIT', []);
+    }
+
+    public function rollbackTransaction(): PromiseInterface
+    {
+        return $this->query('ROLLBACK', []);
+    }
+
 }

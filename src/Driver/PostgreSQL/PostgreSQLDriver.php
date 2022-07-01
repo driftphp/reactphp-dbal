@@ -176,4 +176,19 @@ class PostgreSQLDriver extends AbstractDriver
             ->connection
             ->disconnect();
     }
+
+    public function startTransaction(): PromiseInterface
+    {
+        return $this->query('START TRANSACTION', []);
+    }
+
+    public function commitTransaction(): PromiseInterface
+    {
+        return $this->query('COMMIT', []);
+    }
+
+    public function rollbackTransaction(): PromiseInterface
+    {
+        return $this->query('ROLLBACK', []);
+    }
 }

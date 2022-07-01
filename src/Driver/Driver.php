@@ -62,4 +62,10 @@ interface Driver
      * @return void
      */
     public function close(): void;
+
+    public function startTransaction(): PromiseInterface;
+
+    public function commitTransaction(): PromiseInterface;
+
+    public function rollbackTransaction(): PromiseInterface;
 }
