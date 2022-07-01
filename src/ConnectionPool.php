@@ -85,6 +85,9 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
             $numberOfConnections = $options->getNumberOfConnections();
         }
 
+        // Since using transactions with a single connection in an asynchronous environment
+        // probably doesn't do what you want it to do* we explicitly disallow it.
+
         if ($numberOfConnections <= 1) {
             return SingleConnection::create(
                 $driver,
@@ -101,7 +104,8 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
                     clone $driver,
                     $credentials,
                     $platform,
-                    $options
+                    $options,
+                    true
                 ), $i
             );
         }

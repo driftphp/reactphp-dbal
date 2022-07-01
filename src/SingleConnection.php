@@ -27,6 +27,7 @@ use Drift\DBAL\Mock\MockedDBALConnection;
 use Drift\DBAL\Mock\MockedDriver;
 use React\EventLoop\Loop;
 use React\EventLoop\TimerInterface;
+use RuntimeException;
 use function React\Promise\map;
 use React\Promise\PromiseInterface;
 use function React\Promise\resolve;
@@ -37,6 +38,7 @@ class SingleConnection implements Connection
     private Credentials $credentials;
     private AbstractPlatform $platform;
     private ?TimerInterface $keepAliveTimer = null;
+    private bool $allowTransactions;
 
     /**
      * Connection constructor.
@@ -48,11 +50,13 @@ class SingleConnection implements Connection
     private function __construct(
         Driver $driver,
         Credentials $credentials,
-        AbstractPlatform $platform
+        AbstractPlatform $platform,
+        bool $allowTransactions = false
     ) {
         $this->driver = $driver;
         $this->credentials = $credentials;
         $this->platform = $platform;
+        $this->allowTransactions = $allowTransactions;
     }
 
     public function __destruct()
@@ -76,9 +80,10 @@ class SingleConnection implements Connection
         Driver $driver,
         Credentials $credentials,
         AbstractPlatform $platform,
-        ?ConnectionOptions $options = null
+        ?ConnectionOptions $options = null,
+        bool $allowTransactions = false
     ): Connection {
-        return new self($driver, $credentials, $platform);
+        return new self($driver, $credentials, $platform, $allowTransactions);
     }
 
     /**
@@ -528,18 +533,30 @@ class SingleConnection implements Connection
 
     public function startTransaction(): PromiseInterface
     {
+        if (!$this->allowTransactions) {
+            throw new RuntimeException('starting a transaction in a SingleConnection is not allowed');
+        }
+
         return $this->driver->startTransaction()
             ->then(fn(...$args) => $this);
     }
 
     public function commitTransaction(SingleConnection $connection): PromiseInterface
     {
+        if (!$this->allowTransactions) {
+            throw new RuntimeException('starting a transaction in a SingleConnection is not allowed');
+        }
+
         return $this->driver->commitTransaction()
             ->then(fn(...$args) => $this);
     }
 
     public function rollbackTransaction(SingleConnection $connection): PromiseInterface
     {
+        if (!$this->allowTransactions) {
+            throw new RuntimeException('starting a transaction in a SingleConnection is not allowed');
+        }
+
         return $this->driver->rollbackTransaction()
             ->then(fn(...$args) => $this);
     }
