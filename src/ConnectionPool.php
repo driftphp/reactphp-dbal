@@ -240,7 +240,6 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
         $workers->rewind();
 
         return $workers->current()
-            ->getConnection()
             ->createQueryBuilder();
     }
 
