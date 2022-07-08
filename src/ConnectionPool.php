@@ -15,7 +15,6 @@ declare(strict_types=1);
 
 namespace Drift\DBAL;
 
-use Closure;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Exception\InvalidArgumentException;
 use Doctrine\DBAL\Exception\TableExistsException;
