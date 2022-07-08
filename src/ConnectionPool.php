@@ -172,7 +172,8 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
             return resolve($bestConnection);
         }
 
-        fwrite(STDOUT, 'no more workers' . PHP_EOL);
+        // We may want to introduce some logging here.
+        // fwrite(STDOUT, 'no more workers' . PHP_EOL);
 
         $deferred = new Deferred;
         $this->deferreds->attach($deferred);
