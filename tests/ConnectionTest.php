@@ -15,7 +15,6 @@ declare(strict_types=1);
 
 namespace Drift\DBAL\Tests;
 
-use function Clue\React\Block\await;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Exception\InvalidArgumentException;
 use Doctrine\DBAL\Exception\TableExistsException;
@@ -23,17 +22,22 @@ use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Drift\DBAL\Connection;
 use Drift\DBAL\Result;
+use Drift\DBAL\SingleConnection;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
-use function React\Promise\all;
 use React\Promise\PromiseInterface;
+use RuntimeException;
+
+use function Clue\React\Block\await;
+use function React\Promise\all;
 
 /**
  * Class ConnectionTest.
  */
 abstract class ConnectionTest extends TestCase
 {
+
     /**
      * The timeout is used to prevent tests from endless waiting.
      * Consider this amount of seconds as a reasonable timeout
@@ -50,7 +54,7 @@ abstract class ConnectionTest extends TestCase
 
     /**
      * @param Connection $connection
-     * @param bool       $autoincrementedId
+     * @param bool $autoincrementedId
      *
      * @return PromiseInterface
      */
@@ -94,7 +98,7 @@ abstract class ConnectionTest extends TestCase
 
     /**
      * @param Connection $connection
-     * @param bool       $autoincrementedId
+     * @param bool $autoincrementedId
      *
      * @return PromiseInterface
      */
@@ -198,10 +202,10 @@ abstract class ConnectionTest extends TestCase
             ->then(function (Connection $connection) {
                 return $connection
                     ->insert('test', [
-                            'id' => '1',
-                            'field1' => 'val11',
-                            'field2' => 'val12',
-                        ])
+                        'id' => '1',
+                        'field1' => 'val11',
+                        'field2' => 'val12',
+                    ])
                     ->then(function () use ($connection) {
                         return $connection->insert('test', [
                             'id' => '2',
@@ -222,13 +226,13 @@ abstract class ConnectionTest extends TestCase
 
                 return $connection
                     ->query($queryBuilder
-                    ->select('*')
-                    ->from('test', 't')
-                    ->where($queryBuilder->expr()->orX(
-                        $queryBuilder->expr()->eq('t.id', '?'),
-                        $queryBuilder->expr()->eq('t.id', '?')
-                    ))
-                    ->setParameters(['1', '2']));
+                        ->select('*')
+                        ->from('test', 't')
+                        ->where($queryBuilder->expr()->orX(
+                            $queryBuilder->expr()->eq('t.id', '?'),
+                            $queryBuilder->expr()->eq('t.id', '?')
+                        ))
+                        ->setParameters(['1', '2']));
             })
             ->then(function (Result $result) {
                 $this->assertCount(2, $result->fetchAllRows());
@@ -288,45 +292,45 @@ abstract class ConnectionTest extends TestCase
                             'field2' => 'val2',
                         ]),
                 ])
-                ->then(function () use ($connection) {
-                    return all([
-                        $connection->findOneBy('test', [
-                            'id' => '1',
-                        ]),
-                        $connection->findOneBy('test', [
-                            'id' => '999',
-                        ]),
-                        $connection->findBy('test', [
-                            'field1' => 'val1',
-                        ]),
-                    ]);
-                })
-                ->then(function (array $results) {
-                    $this->assertEquals($results[0], [
-                        'id' => '1',
-                        'field1' => 'val1',
-                        'field2' => 'val1',
-                    ]);
-
-                    $this->assertNull($results[1]);
-                    $listResults = $results[2];
-                    usort($listResults, function ($a1, $a2) {
-                        return $a1['id'] > $a2['id'];
-                    });
-
-                    $this->assertSame($listResults, [
-                        [
+                    ->then(function () use ($connection) {
+                        return all([
+                            $connection->findOneBy('test', [
+                                'id' => '1',
+                            ]),
+                            $connection->findOneBy('test', [
+                                'id' => '999',
+                            ]),
+                            $connection->findBy('test', [
+                                'field1' => 'val1',
+                            ]),
+                        ]);
+                    })
+                    ->then(function (array $results) {
+                        $this->assertEquals($results[0], [
                             'id' => '1',
                             'field1' => 'val1',
                             'field2' => 'val1',
-                        ],
-                        [
-                            'id' => '2',
-                            'field1' => 'val1',
-                            'field2' => 'val2',
-                        ],
-                    ]);
-                });
+                        ]);
+
+                        $this->assertNull($results[1]);
+                        $listResults = $results[2];
+                        usort($listResults, function ($a1, $a2) {
+                            return $a1['id'] > $a2['id'];
+                        });
+
+                        $this->assertSame($listResults, [
+                            [
+                                'id' => '1',
+                                'field1' => 'val1',
+                                'field2' => 'val1',
+                            ],
+                            [
+                                'id' => '2',
+                                'field1' => 'val1',
+                                'field2' => 'val2',
+                            ],
+                        ]);
+                    });
             });
 
         await($promise, $loop, self::MAX_TIMEOUT);
@@ -360,7 +364,7 @@ abstract class ConnectionTest extends TestCase
                 ]);
             });
 
-        list($result0, $result1) = await($promise, $loop, self::MAX_TIMEOUT);
+        [$result0, $result1] = await($promise, $loop, self::MAX_TIMEOUT);
 
         $this->assertEquals('1', $result0['id']);
         $this->assertCount(1, $result1);
@@ -643,5 +647,104 @@ abstract class ConnectionTest extends TestCase
             });
 
         await($promise, $loop, self::MAX_TIMEOUT);
+    }
+
+    public function testTransactionRollback(): void
+    {
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+
+        if ($connection instanceof SingleConnection) {
+            $this->expectException(RuntimeException::class);
+            await($connection->startTransaction());
+            return;
+        }
+
+        await($this->resetInfrastructure($connection, true));
+
+        $transaction = null;
+
+        $promise = $connection->startTransaction()
+            ->then(function (Connection $c) use (&$transaction) {
+                $transaction = $c;
+
+                return $transaction->insert('test', [
+                    'field1' => 'transaction',
+                    'field2' => 'rollback',
+                ]);
+            })
+            ->then(function () use (&$connection) {
+                // This should happen on a different connection because
+                // the transaction one has been leased.
+                return $connection->insert('test', [
+                    'field1' => 'other',
+                    'field2' => 'coroutine',
+                ]);
+            })
+            ->then(function () use ($connection, &$transaction) {
+                /** @var SingleConnection $transaction */
+                return $connection->rollbackTransaction($transaction);
+            });
+
+        await($promise);
+
+        $queryBuilder = $connection->createQueryBuilder()
+            ->select('*')
+            ->from('test')
+            ->where("field1 = 'transaction' and field2 = 'rollback'");
+        /** @var Result $result */
+        $result = await($connection->query($queryBuilder));
+
+        self::assertEmpty($result->fetchAllRows());
+
+        $queryBuilder = $connection->createQueryBuilder()
+            ->select('*')
+            ->from('test')
+            ->where("field1 = 'other' and field2 = 'coroutine'");
+        /** @var Result $result */
+        $result = await($connection->query($queryBuilder));
+
+        self::assertEquals(1, $result->fetchCount());
+    }
+
+    public function testTransactionCommit(): void
+    {
+        $loop = $this->createLoop();
+        $connection = $this->getConnection($loop);
+
+        if ($connection instanceof SingleConnection) {
+            $this->expectException(RuntimeException::class);
+            await($connection->startTransaction());
+            return;
+        }
+
+        await($this->resetInfrastructure($connection, true));
+
+        $transaction = null;
+
+        $promise = $connection->startTransaction()
+            ->then(function (Connection $c) use (&$transaction) {
+                $transaction = $c;
+
+                return $transaction->insert('test', [
+                    'field1' => 'transaction',
+                    'field2' => 'commit',
+                ]);
+            })
+            ->then(function () use ($connection, &$transaction) {
+                /** @var SingleConnection $transaction */
+                return $connection->commitTransaction($transaction);
+            });
+
+        await($promise);
+
+        $queryBuilder = $connection->createQueryBuilder()
+            ->select('*')
+            ->from('test')
+            ->where("field1 = 'transaction' and field2 = 'commit'");
+        /** @var Result $result */
+        $result = await($connection->query($queryBuilder));
+
+        self::assertEquals(1, $result->fetchCount());
     }
 }

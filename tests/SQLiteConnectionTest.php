@@ -32,7 +32,7 @@ class SQLiteConnectionTest extends ConnectionTest
      */
     public function getConnection(LoopInterface $loop): Connection
     {
-        $mysqlPlatform = new SqlitePlatform();
+        $platform = new SqlitePlatform();
 
         return SingleConnection::createConnected(new SQLiteDriver(
             $loop
@@ -42,6 +42,6 @@ class SQLiteConnectionTest extends ConnectionTest
             'root',
             'root',
             ':memory:'
-        ), $mysqlPlatform);
+        ), $platform);
     }
 }
