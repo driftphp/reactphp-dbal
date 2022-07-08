@@ -515,13 +515,13 @@ class ConnectionPool implements Connection, ConnectionPoolInterface
     public function commitTransaction(SingleConnection $connection): PromiseInterface
     {
         return $connection->commitTransaction($connection)
-            ->then(Closure::fromCallable([$this, 'releaseConnection']));
+            ->always(fn() => $this->releaseConnection($connection));
     }
 
     public function rollbackTransaction(SingleConnection $connection): PromiseInterface
     {
         return $connection->rollbackTransaction($connection)
-            ->always(Closure::fromCallable([$this, 'releaseConnection']));
+            ->always(fn() => $this->releaseConnection($connection));
     }
 
     private function releaseConnection(SingleConnection $connection): PromiseInterface
