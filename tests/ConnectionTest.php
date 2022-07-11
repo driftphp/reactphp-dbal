@@ -162,25 +162,25 @@ abstract class ConnectionTest extends TestCase
                         'id' => '1',
                         'field1' => 'val1',
                         'field2' => 'val2',
-                    ])
-                    ->then(function () use ($connection) {
-                        return $connection
-                            ->query($connection
-                                ->createQueryBuilder()
-                                ->select('*')
-                                ->from('test', 't')
-                                ->where('t.id = ?')
-                                ->setParameters(['1'])
-                                ->setMaxResults(1)
-                            );
-                    })
-                    ->then(function (Result $result) {
-                        $this->assertEquals($result->fetchFirstRow(), [
-                            'id' => '1',
-                            'field1' => 'val1',
-                            'field2' => 'val2',
-                        ]);
-                    });
+                    ]);
+            })
+            ->then(function () use ($connection) {
+                return $connection
+                    ->query($connection
+                        ->createQueryBuilder()
+                        ->select('*')
+                        ->from('test', 't')
+                        ->where('t.id = ?')
+                        ->setParameters(['1'])
+                        ->setMaxResults(1)
+                    );
+            })
+            ->then(function (Result $result) {
+                $this->assertEquals($result->fetchFirstRow(), [
+                    'id' => '1',
+                    'field1' => 'val1',
+                    'field2' => 'val2',
+                ]);
             });
 
         await($promise, $loop, self::MAX_TIMEOUT);
@@ -196,26 +196,24 @@ abstract class ConnectionTest extends TestCase
         $promise = $this
             ->resetInfrastructure($connection)
             ->then(function (Connection $connection) {
-                return $connection
-                    ->insert('test', [
-                            'id' => '1',
-                            'field1' => 'val11',
-                            'field2' => 'val12',
-                        ])
-                    ->then(function () use ($connection) {
-                        return $connection->insert('test', [
-                            'id' => '2',
-                            'field1' => 'val21',
-                            'field2' => 'val22',
-                        ]);
-                    })
-                    ->then(function () use ($connection) {
-                        return $connection->insert('test', [
-                            'id' => '3',
-                            'field1' => 'val31',
-                            'field2' => 'val32',
-                        ]);
-                    });
+                return $connection->insert('test', [
+                    'id' => '1',
+                    'field1' => 'val11',
+                    'field2' => 'val12',
+                ]);
+            })->then(function () use ($connection) {
+                return $connection->insert('test', [
+                    'id' => '2',
+                    'field1' => 'val21',
+                    'field2' => 'val22',
+                ]);
+            })
+            ->then(function () use ($connection) {
+                return $connection->insert('test', [
+                    'id' => '3',
+                    'field1' => 'val31',
+                    'field2' => 'val32',
+                ]);
             })
             ->then(function () use ($connection) {
                 $queryBuilder = $connection->createQueryBuilder();
@@ -287,46 +285,46 @@ abstract class ConnectionTest extends TestCase
                             'field1' => 'valX',
                             'field2' => 'val2',
                         ]),
-                ])
-                ->then(function () use ($connection) {
-                    return all([
-                        $connection->findOneBy('test', [
-                            'id' => '1',
-                        ]),
-                        $connection->findOneBy('test', [
-                            'id' => '999',
-                        ]),
-                        $connection->findBy('test', [
-                            'field1' => 'val1',
-                        ]),
-                    ]);
-                })
-                ->then(function (array $results) {
-                    $this->assertEquals($results[0], [
+                ]);
+            })
+            ->then(function () use ($connection) {
+                return all([
+                    $connection->findOneBy('test', [
+                        'id' => '1',
+                    ]),
+                    $connection->findOneBy('test', [
+                        'id' => '999',
+                    ]),
+                    $connection->findBy('test', [
+                        'field1' => 'val1',
+                    ]),
+                ]);
+            })
+            ->then(function (array $results) {
+                $this->assertEquals($results[0], [
+                    'id' => '1',
+                    'field1' => 'val1',
+                    'field2' => 'val1',
+                ]);
+
+                $this->assertNull($results[1]);
+                $listResults = $results[2];
+                usort($listResults, function ($a1, $a2) {
+                    return $a1['id'] > $a2['id'];
+                });
+
+                $this->assertSame($listResults, [
+                    [
                         'id' => '1',
                         'field1' => 'val1',
                         'field2' => 'val1',
-                    ]);
-
-                    $this->assertNull($results[1]);
-                    $listResults = $results[2];
-                    usort($listResults, function ($a1, $a2) {
-                        return $a1['id'] > $a2['id'];
-                    });
-
-                    $this->assertSame($listResults, [
-                        [
-                            'id' => '1',
-                            'field1' => 'val1',
-                            'field2' => 'val1',
-                        ],
-                        [
-                            'id' => '2',
-                            'field1' => 'val1',
-                            'field2' => 'val2',
-                        ],
-                    ]);
-                });
+                    ],
+                    [
+                        'id' => '2',
+                        'field1' => 'val1',
+                        'field2' => 'val2',
+                    ],
+                ]);
             });
 
         await($promise, $loop, self::MAX_TIMEOUT);
@@ -376,19 +374,17 @@ abstract class ConnectionTest extends TestCase
         $promise = $this
             ->resetInfrastructure($connection)
             ->then(function (Connection $connection) {
-                return $connection
-                    ->insert('test', [
-                        'id' => '1',
-                        'field1' => 'val1',
-                        'field2' => 'val1',
-                    ])
-                    ->then(function () use ($connection) {
-                        return $connection->insert('test', [
-                            'id' => '1',
-                            'field1' => 'val1',
-                            'field2' => 'val1',
-                        ]);
-                    });
+                return $connection->insert('test', [
+                    'id' => '1',
+                    'field1' => 'val1',
+                    'field2' => 'val1',
+                ]);
+            })->then(function () use ($connection) {
+                return $connection->insert('test', [
+                    'id' => '1',
+                    'field1' => 'val1',
+                    'field2' => 'val1',
+                ]);
             });
 
         $this->expectException(UniqueConstraintViolationException::class);
