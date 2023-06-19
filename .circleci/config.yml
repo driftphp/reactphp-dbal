@@ -46,6 +46,51 @@ jobs:
             composer update -n --prefer-dist
             .circleci/wait-and-run-phpunit.sh
 
+  test-php81:
+    docker:
+      - image: cimg/php:8.1
+      - image: postgres:alpine
+        environment:
+          POSTGRES_PASSWORD: root
+          POSTGRES_USER: root
+          POSTGRES_DB: test
+      - image: mysql:5
+        environment:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test
+
+    working_directory: ~/project
+    steps:
+      - checkout
+
+      - run:
+          name: Run tests
+          command: |
+            composer update -n --prefer-dist
+            .circleci/wait-and-run-phpunit.sh
+
+  test-php82:
+    docker:
+      - image: cimg/php:8.2
+      - image: postgres:alpine
+        environment:
+          POSTGRES_PASSWORD: root
+          POSTGRES_USER: root
+          POSTGRES_DB: test
+      - image: mysql:5
+        environment:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test
+
+    working_directory: ~/project
+    steps:
+      - checkout
+
+      - run:
+          name: Run tests
+          command: |
+            composer update -n --prefer-dist
+            .circleci/wait-and-run-phpunit.sh
 
 workflows:
   version: 2
@@ -53,3 +98,5 @@ workflows:
     jobs:
       - test-php74
       - test-php80
+      - test-php81
+      - test-php82
